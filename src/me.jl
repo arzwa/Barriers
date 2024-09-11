@@ -1,13 +1,17 @@
-# We want to calculate an expected m_e in windows.
-# What we should get as input is the selected architecture: the selected loci
-# and their map positions, the rest should be done under the hood.
+"""
+    AeschbacherModel(m, s::Vector, xs::Vector)
+
+- `m`  migration rate
+- `s`  vector of selection coefficients (haploid selection)
+- `xs` vector of map positions (in Morgan)
+"""
 struct AeschbacherModel{T}
-    m::T          # migration rate
-    s::Vector{T}  # selection coefficients
-    xs::Vector{T}  # map positions of the selected loci
-    function AeschbacherModel(m::T, s::Vector{T}, xs::Vector{T}) where T 
-        @assert issorted(xs)
-        new{T}(m, s, xs)
+    m :: T          # migration rate
+    s :: Vector{T}  # selection coefficients
+    xs:: Vector{T}  # map positions of the selected loci
+    n :: Int64      # consider n MSPs on either side
+    function AeschbacherModel(m::T, s::Vector{T}, xs::Vector{T}; n=100) where T 
+        new{T}(m, s, sort(xs), n)
     end
 end
 
@@ -15,33 +19,38 @@ end
 function me(model::AeschbacherModel, x)
     @unpack m, s, xs = model
     loggff = 0.0
-    function _recurse1(a, i)
+    function _recursel(a, i)
         (i == length(xs) + 1 || xs[i] > x) && return 0.0
-        b = _recurse1(a, i+1)
+        b = _recursel(a, i+1)
         r = recrate(xs[i], x)
         loggff -= log(1 - s[i]/(r + b))
         return a - b  # Aeschbacher expressions are for positive s...
     end
-    function _recurse2(a, i)
+    function _recurser(a, i)
         (i == 0 || xs[i] < x) && return 0.0
-        b = _recurse2(a, i-1)
+        b = _recurser(a, i-1)
         r = recrate(xs[i], x)
         loggff -= log(1 - s[i]/(r + b))
         return a - b
     end
-    _recurse1(0.0, 1)
-    _recurse2(0.0, length(s))
+    left = findlast(z->z < x, xs)
+    left = isnothing(left) ? 1 : left
+    xl = max(1, left - model.n + 1)
+    xr = min(length(s), left + model.n)
+    _recursel(0.0, xl)
+    _recurser(0.0, xr)
     return m*exp(loggff)
 end
 
-function me_profile(model, d::WindowedChromosome)
-    map(1:length(d)) do i
-        (window, (x1, x2)) = d[i]
-        Eme, _ = quadgk(x->me(model, x), x1, x2)
-        window => Eme/(x2 - x1)
-    end
-end
+"""
+    MILocus
 
+- `s`  selection coefficient
+- `h`  dominance coefficient
+- `u`  mutation rate (symmetric mutation assumed, could be relaxed)
+- `p̄`  mainland allele frequency for the island-locally beneficial allele
+- `Ne` effective population size
+"""
 struct MILocus{T}
     s  :: T
     h  :: T
@@ -51,9 +60,16 @@ struct MILocus{T}
 end
 
 """
-    MainlandIslandModel
+   MIModel(m, xs, loci::Vector{MILocus}; p, tol)
 
 Polygenic barrier model as in Zwaenepoel et al. (2024) and Sachdeva (2022).
+
+- `m`    migration rate
+- `xs`   map positions of selected loci
+- `loci` vector of selected loci
+- `p`    initial allele frequencies for fixed point iteration (default
+         `ones(L)`, i.e. secondary contact scenario).
+- `tol`  tolerance for the fixed point iteration (default `1e-9`)
 """
 struct MIModel{T}
     m    :: T
@@ -113,3 +129,4 @@ function me(model::MIModel, x)
     end
     m*exp(-lg)
 end
+
