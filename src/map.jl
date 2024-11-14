@@ -32,6 +32,8 @@ function GeneticMap(genetic_map)
     GeneticMap(genetic_map, phys2gen, gen2phys)
 end
 
+linearmap(physlen, maplen) = GeneticMap([(1,0.0), (physlen,maplen)])
+
 Base.getindex(m::GeneticMap, x::Real) = round(Int64, m.gen2phys[x])
 Base.getindex(m::GeneticMap, x::Int) = m.phys2gen[x]
 Base.show(io::IO, m::GeneticMap) = write(io, 
@@ -41,7 +43,7 @@ maplength(m::GeneticMap) = last(m.gen2phys.itp.knots[1])
 physlength(m::GeneticMap) = last(m.phys2gen.itp.knots[1])
 
 distance(d::GeneticMap, x1, x2) = abs(d[x1] - d[x2])
-recrate(d::GeneticMap, x1, x2) = haldanemapfun(distance(d, x1, x2))
+recrate(d::GeneticMap, x1, x2) = recrate(distance(d, x1, x2))
 recrate(x1, x2) = recrate(abs(x1 - x2))
 recrate(d) = 0.5*(1-exp(-2d))
 
@@ -133,6 +135,22 @@ Base.lastindex(d::WindowedChromosome) = length(d)
 maplength(d::WindowedChromosome) = maplength(d.geneticmap)
 physlength(d::WindowedChromosome) = physlength(d.geneticmap)
 
+# Coarse recombination rates between windows (recombination rates between
+# window midpoints).
+function window_recrates(d::WindowedChromosome)
+    n = length(d)
+    R = zeros(n, n)
+    for i=2:n
+        x0, x1 = d[i][2]
+        xmid = (x0 + x1)/2
+        for j=1:i-1
+            x0, x1 = d[j][2]
+            R[i,j] = R[j,i] = recrate(abs.((x0 + x1)/2 - xmid))
+        end
+    end
+    return R
+end
+
 """
     me_profile(model, d::WindowedChromosome)
 
@@ -144,6 +162,43 @@ function me_profile(model, d::WindowedChromosome)
         Eme, _ = quadgk(x->me(model, x), x1, x2)
         window => Eme/(x2 - x1)
     end 
+end
+
+function me_profile_vec(model, d::WindowedChromosome)
+    map(1:length(d)) do i
+        (_, (x1, x2)) = d[i]
+        Eme, _ = quadgk(x->me(model, x), x1, x2)
+        Eme/(x2 - x1)
+    end 
+end
+
+function me_profile_vec_local!(
+        model, d::WindowedChromosome, 
+        mes, loci, j)
+    @unpack n = model
+    # recompute focal window me
+    (_, (x1, x2)) = d[j]
+    Eme, _ = quadgk(x->me(model, x), x1, x2)
+    mes[j] = Eme/(x2 - x1)
+    # examine leftward windows
+    left = 0; i = 1
+    while left < n && j - i > 0
+        (_, (x1, x2)) = d[j-i]
+        Eme, _ = quadgk(x->me(model, x), x1, x2)
+        mes[j-i] = Eme/(x2 - x1) 
+        left += length(loci[j-i])
+        i += 1
+    end
+    # examine rightward windows
+    rght = 0; i = 1
+    while rght < n && j + i < length(d)
+        (_, (x1, x2)) = d[j+i]
+        Eme, _ = quadgk(x->me(model, x), x1, x2)
+        mes[j+i] = Eme/(x2 - x1) 
+        left += length(loci[j+i])
+        i += 1
+    end
+    return mes
 end
 
 """

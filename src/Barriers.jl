@@ -8,16 +8,21 @@ using AdaptiveProposals
 using Distributions
 using Serialization
 using Parameters
+using Accessors
 using WrightDistribution
 using Interpolations
+using StatsBase
 using Base.Iterators: partition
 
 const Mb = 10^6
 const kb = 10^3
 
 include("map.jl")
-include("me.jl")
-include("sample.jl")
+include("aeschbacher_me.jl")
+include("diffusion_me.jl")
+include("strongbgs.jl")
+#include("sample.jl")
+include("sample3.jl")
 
 export Mb, kb
 export WindowedChromosome, GeneticMap, AeschbacherModel, MIModel, MILocus

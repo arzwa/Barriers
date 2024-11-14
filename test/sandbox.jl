@@ -33,6 +33,7 @@ ys1 = map(x -> ([extrema(x[1])...], [x[2], x[2]]), mes1)
 Nes = 10.0
 loci = [MILocus(ss[i], 0.5, s/100, 0.0, Nes/s) for i=1:L]
 model2 = MIModel(m, pos, loci)
+
 mes2 = me_profile(model2, d)
 ys2 = map(x -> ([extrema(x[1])...], [x[2], x[2]]), mes2)
 
@@ -46,3 +47,7 @@ plot!(xxs, map(x->Barriers.me(model1, d.geneticmap[x]), xxs) ./ m,
 plot!(xxs, map(x->Barriers.me(model2, d.geneticmap[x]), xxs) ./ m, 
     color=:red, alpha=0.2, margin=5Plots.mm)
 
+
+
+
+# -----
