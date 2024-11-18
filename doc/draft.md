@@ -160,18 +160,5 @@ using our RV-based expressions).
 Aeschbacher: this is the computation using @aeschbacher2014.
 ](/home/arthur_z/vimwiki/build/img/2024-11-14/comparisons.svg){#fig:comparisons}
 
-## Diffusion model
-
-- Assume for simplicity a haploid model. 
-- It would be nice to try an approach where we assume a single $\ex{p_i}$
-  within each window. 
-- It may be possible to use an even more crude approach: assuming a single
-  $\ex{p}$ for all selected loci (under the assumption of a constant selection
-  coefficient, this may not be that far off).
-
-$$\ex{p_i} = \int p_i^{2N_e\left(u + m_e\left[\ex{p}\right]p_i^\ast\right)} 
-            q_i^{2N_e\left(u + m_e\left[\ex{p}\right]q_i^\ast\right) - 1} 
-            e^{-2N_sq_i} dp_i$$
-
 
 ## References

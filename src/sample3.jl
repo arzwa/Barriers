@@ -24,6 +24,29 @@ function Data(d::WindowedChromosome, meobs, σ)
     Data(D, R, L)
 end
 
+function Data(d::Vector, σ)
+    nelem = length(d)
+    xs = map(d) do (dd, meobs)
+        n = length(dd)
+        D = [Normal(log(meobs[i]), σ) for i=1:n]
+        R = window_recrates(dd)
+        L = [dd[i][2][2] - dd[i][2][1] for i=1:n]
+        D, R, L
+    end
+    D = product_distribution(vcat(getindex.(xs, 1)...))
+    L = vcat(getindex.(xs, 3)...)
+    L ./= sum(L)
+    T = length(L)  # total number of windows
+    R = fill(0.5, T, T)
+    x0 = 1
+    for Ri in getindex.(xs, 2)
+        a, _ = size(Ri)
+        R[x0:x0+a-1,x0:x0+a-1] .= Ri
+        x0 += a 
+    end
+    Data(D, R, L)
+end
+
 struct State{T,U}
     θ      :: T
     X      :: Vector{Int64}

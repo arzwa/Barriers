@@ -46,7 +46,7 @@ distance(d::GeneticMap, x1, x2) = abs(d[x1] - d[x2])
 recrate(d::GeneticMap, x1, x2) = recrate(distance(d, x1, x2))
 recrate(x1, x2) = recrate(abs(x1 - x2))
 recrate(d) = 0.5*(1-exp(-2d))
-
+    
 function recrates(xs::Vector{T}) where T
     L = length(xs)
     R = zeros(L, L)
@@ -134,6 +134,13 @@ Base.lastindex(d::WindowedChromosome) = length(d)
 
 maplength(d::WindowedChromosome) = maplength(d.geneticmap)
 physlength(d::WindowedChromosome) = physlength(d.geneticmap)
+
+function recrate(d::WindowedChromosome, win)
+    xx, (d0, d1) = d[win]
+    r = recrate(d.geneticmap, xx[1], xx[2])
+    r, length(xx)
+end
+
 
 # Coarse recombination rates between windows (recombination rates between
 # window midpoints).

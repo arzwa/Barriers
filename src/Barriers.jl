@@ -23,6 +23,7 @@ include("diffusion_me.jl")
 include("strongbgs.jl")
 #include("sample.jl")
 include("sample3.jl")
+include("sitepatterns.jl")
 
 export Mb, kb
 export WindowedChromosome, GeneticMap, AeschbacherModel, MIModel, MILocus

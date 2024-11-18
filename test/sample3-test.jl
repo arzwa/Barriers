@@ -2,6 +2,7 @@ using Pkg; Pkg.activate("/home/arthur_z/dev/Barriers")
 using Barriers, StatsBase, Distributions, Parameters
 using AdaptiveProposals, Plots, StatsPlots; plotsdefault();
 include("test/heliconius-data.jl")
+d, meobs = getchr(df, 18)
 
 m = 1e-4
 s = 2e-3
@@ -70,7 +71,7 @@ proposals = (
     m=PositiveProposal()
 )
 θ     = map(mean, priors)
-σ     = √(1/2)
+σ     = √(1/8)
 data  = Barriers.Data(d, last.(meobs), σ)
 X     = [rand(Poisson(θ.ν*data.L[i])) for i=1:length(data)]
 state = Barriers.initialize(θ, X, priors, data)
@@ -136,5 +137,28 @@ scatter!(zs, mean(mm, dims=2), size=(800,200), color=:firebrick, ms=1.5,
     legend=false)
 XX = hcat([x.X for x in res]...)
 plot!(twinx(), zs, mean(XX, dims=2), color=:salmon, fill=true, alpha=0.5,
-    line=:steppre, legend=false)
+    line=:steppre, legend=false, title="Chromosome 1, \$\\sigma^2 = 1/8\$")
 
+
+# Multiple chromosomes
+XX     = [getchr(df, i) for i=1:5]
+data   = Barriers.Data(XX, √1/8)
+priors = (
+    m=Gamma(0.1,2e-4), 
+    s=Gamma(0.1,1e-3), 
+    ν=Gamma(1,500.0))   # ν = 100 [/M] -> about 50 selected loci on chr 18
+map(mean, priors)
+
+proposals = (
+    ν=PositiveProposal(),
+    s=PositiveProposal(),
+    m=PositiveProposal()
+)
+θ     = map(mean, priors)
+σ     = √(1/4)
+X     = [rand(Poisson(θ.ν*data.L[i])) for i=1:length(data)]
+state = Barriers.initialize(θ, X, priors, data)
+S     = Barriers.Sampler(priors, proposals, data)
+
+res_  = Barriers.mcmc(S, state, 11000, nw=50, kmax=100, every=10, thin=2)
+res   = res_[501:end]
