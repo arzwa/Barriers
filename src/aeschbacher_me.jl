@@ -25,14 +25,14 @@ function gff(model::AeschbacherModel, x)
     function _recursel(a, i)
         (i == length(xs) + 1 || xs[i] > x) && return 0.0
         b = _recursel(a, i+1)
-        r = recrate(xs[i], x)
+        r = recrate(abs(xs[i] - x))
         loggff -= log(1 - gets(model, i)/(r + b))
         return a - b  # Aeschbacher expressions are for positive s...
     end
     function _recurser(a, i)
         (i == 0 || xs[i] < x) && return 0.0
         b = _recurser(a, i-1)
-        r = recrate(xs[i], x)
+        r = recrate(abs(xs[i] - x))
         loggff -= log(1 - gets(model, i)/(r + b))
         return a - b
     end

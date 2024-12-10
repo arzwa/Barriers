@@ -75,10 +75,11 @@ window `j` to the average gff in window `i`. We have `sum(G[i,:]) == log(gᵢ)`.
 Importantly, when the number of selected loci in window `j` changes, this only
 affects `G[:,j]`, allowing for efficient updates.
 """
-function g_matrix(θ, X, data::Data)
+g_matrix(θ, X, data) = g_matrix(θ, X, data.L, data.R)
+
+function g_matrix(θ, X, L, R)
     @unpack s, m = θ
-    @unpack R, L = data
-    n = length(data)
+    n = length(L)
     G = zeros(n,n)
     for i=1:n, j=1:n
         if i == j
@@ -117,7 +118,7 @@ function latent_logpdf(ν, X, data)
     [logpdf(Poisson(ν*data.L[i]), X[i]) for i=1:length(X)]
 end
 
-function loglhood(data, G, θ)
+function loglhood(data::Data, G, θ)
     logmₑ = mepred(G, θ.m)
     logpdf(data.ℓ, logmₑ)
 end
@@ -205,41 +206,51 @@ function mh_update(state, data, priors, proposal, sym)
     return state
 end
 
-function mcmc(S::Sampler, state::V, n; 
+function mcmc(S, state::V, n; 
         nw=30, every=10, kmax=20, thin=10) where V<:State
     @unpack priors, proposals, data = S
     res = Vector{V}(undef, n÷thin)
-    for it=1:n
-        if (it-1) % every == 0 
-            @unpack m, s, ν = state.θ
-            @printf("%6d %5d %6.3e %6.3e %6.3e\n", it-1, sum(state.X), m, s, ν)
+    try
+        for it=1:n
+            if (it-1) % every == 0 
+                printlog(state, proposals, it-1)
+            end
+            # global parameters
+            for sym in union(keys(proposals), (:ν,))
+                state = sym == :ν ? ν_update( state, data, priors.ν, priors)  :
+                    mh_update(state, data, priors, getfield(proposals, sym), sym)
+            end
+            # iterate over windows
+            X = copy(state.X)
+            G = copy(state.G)
+            l = copy(state.latent)
+            for j=rand(1:length(data), nw)
+                p = probs(G, state.θ, data, j, kmax)
+                k = sample(0:length(p)-1, Weights(p))
+                X[j] = k
+                l[j] = logpdf(Poisson(state.θ.ν * data.L[j]), k)
+                gcolumn!(@view(G[:,j]), j, k, state.θ, data)
+            end
+            lhood  = loglhood(data, G, state.θ)
+            state  = State(state.θ, X, G, l, state.priorp, lhood)
+            if it % thin == 0 
+                res[it÷thin] = state
+            end
         end
-        # global parameters
-        for sym in keys(proposals)
-            state = sym == :ν ? ν_update( state, data, priors.ν, priors)  :
-                mh_update(state, data, priors, getfield(proposals, sym), sym)
-        end
-        # iterate over windows
-        X = copy(state.X)
-        G = copy(state.G)
-        l = copy(state.latent)
-        for j=rand(1:length(data), nw)
-            p = probs(G, state.θ, data, j, kmax)
-            k = sample(0:length(p)-1, Weights(p))
-            X[j] = k
-            l[j] = logpdf(Poisson(state.θ.ν * data.L[j]), k)
-            gcolumn!(@view(G[:,j]), j, k, state.θ, data)
-        end
-        lhood  = loglhood(data, G, state.θ)
-        state  = State(state.θ, X, G, l, state.priorp, lhood)
-        if it % thin == 0 
-            res[it÷thin] = state
-        end
+    catch e
+        @error "Interrupted" e
+        return res[filter(i->isdefined(res,i), 1:length(res))]
     end
     return res
 end
 
-
-
+function printlog(state, proposals, it)
+    @printf "%6d " it
+    for f in [keys(proposals)...; :ν]
+        x = getfield(state.θ, f)
+        @printf "%s=%5.3e " f x
+    end
+    print("\n")
+end
 
 

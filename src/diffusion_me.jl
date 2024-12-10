@@ -85,7 +85,7 @@ function gff(model::MIModel, x)
     @unpack m, xs, loci, Ep, Epq = model
     lg = 0.0
     for j=1:length(loci)
-        lg += locuseffect(loci[j], Ep[j], Epq[j], m, recrate(x, xs[j]))
+        lg += locuseffect(loci[j], Ep[j], Epq[j], m, recrate(abs(x - xs[j])))
     end
     exp(-lg)
 end
