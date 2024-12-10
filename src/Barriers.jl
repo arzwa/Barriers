@@ -19,15 +19,16 @@ const Mb = 10^6
 const kb = 10^3
 
 include("geneticmap.jl")
-include("windowed.jl")
-include("aeschbacher_me.jl")
+include("architecture.jl")
+#include("windowed.jl")
+#include("aeschbacher_me.jl")
 include("diffusion_me.jl")
-include("strongbgs.jl")
-#include("sample.jl")
-include("sample3.jl")
-include("sample4.jl")
-include("sites_pr.jl")
-include("infsite-likelihood.jl")
+#include("strongbgs.jl")
+##include("sample.jl")
+#include("samplers/sample3.jl")
+#include("samplers/sample4.jl")
+#include("infsites_prfuns.jl")
+#include("infsites_likelihood.jl")
 
 export Mb, kb
 export WindowedChromosome, GeneticMap, AeschbacherModel, MIModel, MILocus

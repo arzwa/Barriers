@@ -1,51 +1,34 @@
-"""
-    MILocus
 
-- `s`  selection coefficient *against island-locally del. allele*
-- `h`  dominance coefficient
-- `u`  mutation rate (symmetric mutation assumed, could be relaxed)
-- `p̄`  mainland allele frequency for the island-locally del. allele
-- `Ne` effective population size
-"""
-struct MILocus{T}
-    s  :: T
-    h  :: T
-    u  :: T
-    p̄  :: T
-    Ne :: T
-end
-
-"""
-   MIModel(m, xs, loci::Vector{MILocus}; p, tol)
-
-Polygenic barrier model as in Zwaenepoel et al. (2024) and Sachdeva (2022).
-
-- `m`    migration rate
-- `xs`   map positions of selected loci
-- `loci` vector of selected loci
-- `p`    initial allele frequencies for fixed point iteration (default
-         `ones(L)`, i.e. secondary contact scenario).
-- `tol`  tolerance for the fixed point iteration (default `1e-9`)
-"""
-struct MIModel{T}
+@kwdef struct MainlandIslandModel{T,V,A<:Architecture}
+    arch :: A
     m    :: T
-    xs   :: Vector{T}
-    loci :: Vector{MILocus{T}}
-    Ep   :: Vector{T}
-    Epq  :: Vector{T}
+    p̄    :: Vector{T} = zeros(length(arch))
+    N    :: V   # may be a vector, if we want to include Nₑ heterogeneity
 end
 
-function MIModel(m::T, xs::Vector{T}, loci; p=ones(length(xs)), tol=1e-9) where T
-    @assert length(xs) == length(loci)
-    R = recrates(xs)
-    Ep, Epq = fixed_point_iteration(m, loci, R, p, p .* (1 .- p), tol=tol)
-    MIModel(m, xs, loci, Ep, Epq)
+struct Equilibrium{M<:MainlandIslandModel,T}
+    model :: M
+    Ep    :: Vector{T} 
+    Epq   :: Vector{T}
 end
 
-function fixed_point_iteration(m, loci, R, p, pq; tol=1e-9)
+function Equilibrium(model::MainlandIslandModel; 
+        p0=ones(length(model.arch)), tol=1e-9)
+    @unpack arch, p̄, N, m = model
+    @unpack R, loci = arch
+    pq0 = p0 .* (1 .- p0)
+    Ep, Epq = fixed_point_iteration(m, loci, R, N, p̄, p0, pq0, tol=tol)
+    Equilibrium(model, Ep, Epq)
+end
+
+getNe(N::Real, _) = N
+getNe(N, i) = N[i]
+
+function fixed_point_iteration(m, loci, R, N, p̄, p, pq; tol=1e-9)
+    L = length(loci) 
     while true
-        gs  = gffs(m, loci, R, p, pq) 
-        xs  = map(i->predict(loci[i], m*gs[i]), 1:length(loci))
+        gs  = gffs(m, loci, p̄, R, p, pq) 
+        xs  = map(i->predict(loci[i], getNe(N,i), p̄[i], m*gs[i]), 1:L)
         Ep  = first.(xs)
         Epq = last.(xs)
         norm(Ep .- p) < tol && return Ep, Epq
@@ -53,42 +36,44 @@ function fixed_point_iteration(m, loci, R, p, pq; tol=1e-9)
     end
 end
 
-function predict(locus::MILocus, mₑ)
-    @unpack Ne, s, h, u, p̄ = locus
-    # p is locally beneficial, q is locally deleterious
-    d = Wright(-Ne*s, Ne*(mₑ*(p̄ + u)), Ne*(mₑ*(1-p̄) + u), h) 
-    # mean(d) is the frequency of the locally beneficial allele
-    mean(d), expectedpq(d)
-end
+gffs(m, loci, p̄, R, p, pq) = map(i->gff(m, loci, p̄, R, p, pq, i), 1:length(loci))
 
-gffs(m, loci, R, p, pq) = map(i->gff(m, loci, R, p, pq, i), 1:length(loci))
-
-function gff(m, loci, R, p, pq, i)
+function gff(m, loci, p̄, R, p, pq, i)
     lg = 0.0
     for j=1:length(loci)
         i == j && continue  # it does matter! We overpredict the beneficial
         # allele frequency when we include the focal locus' own effect in the
         # mₑ calculation
-        lg += locuseffect(loci[j], p[j], pq[j], m, R[i,j])
+        lg += locuseffect(loci[j], p[j], pq[j], m, p̄[j], R[i,j])
     end
     exp(-lg)
 end
 
-function locuseffect(locus, p, pq, m, r)
-    @unpack s, h, p̄ = locus
+function locuseffect(locus, p, pq, m, p̄, r)
+    @unpack s, h = locus
     N = s*h*(p-p̄) - s*(1-2h)*(p̄*(1-p) - pq)
     D = m + r + s*(h - (1-p) + 2*(1-2h)*pq)
     return N/D
 end
 
-function gff(model::MIModel, x)
-    @unpack m, xs, loci, Ep, Epq = model
+function predict(locus, Nₑ, p̄, mₑ)
+    @unpack s, h, u = locus
+    # p is locally beneficial, q is locally deleterious
+    d = Wright(-Nₑ*s, Nₑ*(mₑ*(p̄ + u)), Nₑ*(mₑ*(1-p̄) + u), h) 
+    # mean(d) is the frequency of the locally beneficial allele
+    mean(d), expectedpq(d)
+end
+
+function gff(eqmodel::Equilibrium, x)
+    @unpack model, Ep, Epq = eqmodel
+    @unpack m, p̄, arch = model
+    @unpack xs, loci = arch
     lg = 0.0
     for j=1:length(loci)
-        lg += locuseffect(loci[j], Ep[j], Epq[j], m, recrate(abs(x - xs[j])))
+        lg += locuseffect(loci[j], Ep[j], Epq[j], m, p̄[j], recrate(abs(x - xs[j])))
     end
     exp(-lg)
 end
 
-me(model, x) = model.m*gff(model, x)
+me(M::Equilibrium, x) = M.model.m*gff(M, x)
 
