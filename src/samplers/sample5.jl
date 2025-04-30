@@ -125,3 +125,23 @@ function lognormalize(l)
    return x ./ sum(x)
 end
 
+function mh_update(smplr, state, sym)
+    @unpack logπ, logℓ = state
+    @unpack priors, proposals, data = smplr
+    proposal = getfield(proposals, sym)
+    x_, q  = proposal(getfield(state.θ, sym))
+    θ = reconstruct(state.θ, sym=>x_)  # not sure how to do this with Accessors
+    model = reconstruct(state.model, sym=>x_)
+    # XXX assuming complete divergence!
+    G = log_gff_matrix(model)
+    logπ_ = logprior(priors, θ) 
+    logℓ_ = loglhood(data, G, θ)
+    ar  = logπ_ + logℓ_ - (logπ + logℓ) + q
+    if log(rand()) < ar
+        accept!(proposal)
+        return State(θ, G, logπ_, logℓ_, model)
+    else
+        return state
+    end
+end
+
