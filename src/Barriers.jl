@@ -2,7 +2,7 @@ module Barriers
 
 using Printf
 using LinearAlgebra
-using Sewall
+#using Sewall
 using QuadGK
 using AdaptiveProposals
 using Distributions
@@ -20,19 +20,21 @@ const kb = 10^3
 
 include("geneticmap.jl")
 include("architecture.jl")
-#include("windowed.jl")
-#include("aeschbacher_me.jl")
+include("windowed.jl")
+include("aeschbacher_me.jl")
 include("diffusion_me.jl")
+include("coarse-me.jl")
+include("slim-tskit.jl")
 #include("strongbgs.jl")
-##include("sample.jl")
 #include("samplers/sample3.jl")
 #include("samplers/sample4.jl")
-#include("infsites_prfuns.jl")
-#include("infsites_likelihood.jl")
+include("samplers/sample5.jl")
+include("infsites_prfuns.jl")
+include("infsites_likelihood.jl")
+include("utils.jl")
 
 export Mb, kb
 export WindowedChromosome, GeneticMap, AeschbacherModel, MIModel, MILocus
 export me_profile, me
-
 
 end # module Barriers

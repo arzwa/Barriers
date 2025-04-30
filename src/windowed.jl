@@ -137,4 +137,3 @@ function plotcoords(zs)
     xs, ys
 end
 
-

@@ -1,8 +1,8 @@
 # Calculate site probabilities under infinite sites model for a sample of two
 # haplotypes from each population in a M model.
-probs(m, μ, a, b) = probs([m, μ, a, b])
+siteprobs(m, μ, a, b) = siteprobs([m, μ, a, b])
 
-function probs(xs) 
+function siteprobs(xs) 
     b = _FD(xs)
     c = _HA(xs)
     d = _HB(xs)

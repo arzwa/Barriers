@@ -1,12 +1,12 @@
 using CSV, DataFrames
 using Barriers
 
-df = CSV.read("/home/arthur_z/dev/Barriers/data/64bpX500blocks-rho-cds-sumstats-me-fit-range-comb.tsv", DataFrame)
+df = CSV.read("/home/arzwa/dev/Barriers/data/64bpX500blocks-rho-cds-sumstats-me-fit-range-comb.tsv", DataFrame)
 
 function getchr(df, chr)
     df18 = filter(x->x[:chrom] == chr, df)
 
-    lmap = CSV.read("/home/arthur_z/dev/Barriers/data/linkage_map.cydno.cm.tsv", DataFrame)
+    lmap = CSV.read("/home/arzwa/dev/Barriers/data/linkage_map.cydno.cm.tsv", DataFrame)
     lmap = filter(x->x[:Chromosome] == "chr$chr", lmap)
     lmap = lmap[.!nonunique(lmap[:,[:cM]]),:]
     gmap = GeneticMap(collect(zip(lmap[:,:End] .+ 1, lmap[:,:cM] ./ 100)))

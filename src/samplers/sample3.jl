@@ -124,20 +124,20 @@ function loglhood(data::Data, G, θ)
 end
 
 # assuming complete divergence
-function predict_me(θ, X, data::Data)
-    [predict_me(θ, X, data, i) for i=1:length(data)]
-end
-
-function predict_me(θ, X, data::Data, i)
-    @unpack s, m = θ
-    @unpack R, L = data
-    lgi = local_lg(X[i], L[i], s, m)  # log me
-    for j=1:length(data)
-        (j == i || X[j] == 0) && continue
-        lgi -= X[j]*s/(m + s + R[i,j]) 
-    end
-    return m*exp(lgi)
-end
+#function predict_me(θ, X, data::Data)
+#    [predict_me(θ, X, data, i) for i=1:length(data)]
+#end
+#
+#function predict_me(θ, X, data::Data, i)
+#    @unpack s, m = θ
+#    @unpack R, L = data
+#    lgi = local_lg(X[i], L[i], s, m)  # log me
+#    for j=1:length(data)
+#        (j == i || X[j] == 0) && continue
+#        lgi -= X[j]*s/(m + s + R[i,j]) 
+#    end
+#    return m*exp(lgi)
+#end
 
 function lognormalize(l)
    x = exp.(l .- maximum(l))
@@ -196,14 +196,16 @@ function mh_update(state, data, priors, proposal, sym)
     θ_  = reconstruct(θ, sym=>x_)  # not sure how to do this with Accessors
     pp_ = logprior(priors, θ_)
     G_  = g_matrix(θ_, X, data)
-    latent_ = copy(latent)
+    #latent_ = copy(latent)
     ll_ = loglhood(data, G_, θ_)
-    ar  = ll_ + pp_ + sum(latent_) - (lhood + priorp + sum(latent)) + q
+    ar  = ll_ + pp_ - (lhood + priorp) + q
+    @info "update" θ_.m θ.m ll_ lhood pp_ priorp q
     if log(rand()) < ar
-        state = State(θ_, X, G_, latent_, pp_, ll_)
         accept!(proposal)
+        return State(θ_, X, G_, latent, pp_, ll_)
+    else
+        return state
     end
-    return state
 end
 
 function mcmc(S, state::V, n; 
@@ -216,9 +218,11 @@ function mcmc(S, state::V, n;
                 printlog(state, proposals, it-1)
             end
             # global parameters
-            for sym in union(keys(proposals), (:ν,))
-                state = sym == :ν ? ν_update( state, data, priors.ν, priors)  :
-                    mh_update(state, data, priors, getfield(proposals, sym), sym)
+            if typeof(priors.ν) <: Gamma
+                state = ν_update(state, data, priors.ν, priors)
+            end
+            for sym in keys(proposals)
+                state = mh_update(state, data, priors, getfield(proposals, sym), sym)
             end
             # iterate over windows
             X = copy(state.X)
@@ -228,7 +232,8 @@ function mcmc(S, state::V, n;
                 p = probs(G, state.θ, data, j, kmax)
                 k = sample(0:length(p)-1, Weights(p))
                 X[j] = k
-                l[j] = logpdf(Poisson(state.θ.ν * data.L[j]), k)
+                l[j] = logpdf(Poisson(state.θ.ν * data.L[j]), k)  
+                # XXX what do we store `l` for? not needed...
                 gcolumn!(@view(G[:,j]), j, k, state.θ, data)
             end
             lhood  = loglhood(data, G, state.θ)

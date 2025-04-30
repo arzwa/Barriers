@@ -53,7 +53,7 @@ end
 function winlogpdf(x, l, θ, m)
     @unpack K, λ, α, μ, γ = θ
     rs = discretize(Gamma(α, 1/α), K)
-    ℓ = mapreduce(r->logpdfcl(m, μ, λ*r, λ*r, x, l, γ), +, rs) 
+    ℓ = mapreduce(r->logpdfcl(m, μ, λ*r, λ*r, x, l*γ), +, rs) 
     ℓ - log(K)
 end
 
@@ -66,7 +66,7 @@ end
 
 function probs(G, θ, data::CLData, i, kmax=100, logeps=-12)
     @unpack ν, m, s = θ
-    L = data.L[i] 
+    L = data.L[i]
     P = Poisson(ν*L)
     g = vec(sum(G, dims=2)) .- G[:,i]
     gi = similar(g)

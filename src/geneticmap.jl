@@ -53,7 +53,7 @@ distance(r) = -0.5log(1-2r)
 
 Calculate recombination rate matrix between the map positions `xs`.
 """
-function recrates(xs::Vector{T}) where T
+function recrates(xs::AbstractVector{T}) where T
     L = length(xs)
     R = zeros(L, L)
     for i=1:L

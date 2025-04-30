@@ -1,8 +1,11 @@
 
+# Migration is A->B forward in time
 function CLModel(m, μ, a, b, n)
     p = probs(m, μ, a, b)
     return Multinomial(n, p)
 end
+
+const states = ["F", "FD", "HA", "HB", "HAB"]
 
 #function logpdfcl(m, μ, a, b, x)
 #    p = probs(m, μ, a, b)
@@ -14,15 +17,21 @@ end
 #    end
 #end
 
+logpdfsite(m, u, a, b, site) = log(probs(m, u, a, b)[site])
+
 # γ is the number of pseudo-data points per window
-function logpdfcl(m, μ, a, b, x, l, γ=0.01)
-    p = probs(m, μ, a, b)
-    y = x .* l .* γ  # pseudo counts
+function _logpdfcl(m, μ, a, b, x, γ=1.0)
+    p = siteprobs(m, μ, a, b)
+    y = x .* γ  # pseudo counts
     n = sum(y)
     loggamma(sum(y) + 1) + sum((y .* log.(p))) - sum(loggamma.(y .+ 1))
-end
+end  # Multinomial
 
-const states = ["F", "FD", "HA", "HB", "HAB"]
+function logpdfcl(m, μ, a, b, x, γ=1.0)
+    p = siteprobs(m, μ, a, b)
+    y = x .* γ  # pseudo counts
+    sum(log.(p) .* y)
+end  # Categorical
 
 function classify(x)
     (x[1] == x[2] == x[3] == x[4]) && return "F"
@@ -31,7 +40,9 @@ function classify(x)
 	(x[1] == x[2] && x[3] != x[4]) && return "HB"
 	(x[1] != x[2] && x[3] != x[4]) && return "HAB"
 end
-    
+
+classify2(x) = findfirst(y->y==classify(x), states)
+
 function getcounts(L, x)
     cts = countmap(x)
     y = Dict(k => 0 for k in states)
@@ -42,6 +53,62 @@ function getcounts(L, x)
     y["F"] += L - sum(values(y))
     [y[k] for k in states]
 end
+
+function get_counts_windows(data::Vector{<:Tuple}, winsize)
+    wins = Vector{Int64}[]
+    curr = winsize
+    temp = String[]
+    i = 1
+    while i <= length(data)
+        if data[i][1] > curr
+            cm = countmap(temp)
+            for k in states
+                !(haskey(cm, k)) && (cm[k] = 0)
+            end
+            cm["F"] += winsize - sum(values(cm))
+            push!(wins, [cm[k] for k in states])
+            temp = String[]
+            curr += winsize
+        end
+        push!(temp, data[i][2])
+        i += 1
+    end
+    cm = countmap(temp)
+    for k in states
+        !(haskey(cm, k)) && (cm[k] = 0)
+    end
+    cm["F"] += winsize - sum(values(cm))
+    push!(wins, [cm[k] for k in states])
+    return wins
+end
+
+# this one assumes that fixed sites are included (e.g. from Fwd sim)
+function get_counts_windows2(data::Vector{<:Tuple}, winsize)
+    wins = Vector{Int64}[]
+    curr = winsize
+    temp = String[]
+    i = 1
+    while i <= length(data)
+        if data[i][1] > curr
+            cm = countmap(temp)
+            for k in states
+                !(haskey(cm, k)) && (cm[k] = 0)
+            end
+            push!(wins, [cm[k] for k in states])
+            temp = String[]
+            curr += winsize
+        end
+        push!(temp, data[i][2])
+        i += 1
+    end
+    cm = countmap(temp)
+    for k in states
+        !(haskey(cm, k)) && (cm[k] = 0)
+    end
+    push!(wins, [cm[k] for k in states])
+    return wins
+end
+
 
 sitepr(m, μ, λa, λb, x=[["a","a"],["b","b"]]) = 
     sitepr(promote(m, μ, λa, λb)..., x=[["a","a"],["b","b"]])
