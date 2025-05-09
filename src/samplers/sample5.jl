@@ -20,6 +20,12 @@ struct State{T,V,M}
     model :: M
 end
 
+function logstring(x::State, it, fields...)
+    p = x.logπ + x.logℓ
+    s = join([@sprintf("%.4e", getfield(x.θ, v)) for v in fields], " ")
+    @sprintf "%7d %4e %s\n" it p s
+end
+
 function logprior(priors, θ) 
     mapreduce(x->logpdf(x...), +, zip(priors, θ))
 end
@@ -37,12 +43,12 @@ function loglhood(X::AbstractVector, l, θ, logmₑ)
     mapreduce(i->winlogpdf(X[i], l[i], θ, exp(logmₑ[i])), +, 1:length(X))
 end
 
-# XXX assuming equal coalescence rates -- should relax
 function winlogpdf(x, l, θ, m)
-    @unpack λ, u, γ = θ
-    logpdfcl(m, u, λ, λ, x, γ*l)
+    @unpack α, λ, u, γ = θ
+    logpdfcl(m, u, α*λ, λ, x, γ*l)
 end
 
+# XXX assuming complete divergence...
 function log_gff_matrix(model::CoarseModel)
     n = length(model.X)
     G = zeros(n, n)
@@ -131,7 +137,8 @@ function mh_update(smplr, state, sym)
     proposal = getfield(proposals, sym)
     x_, q  = proposal(getfield(state.θ, sym))
     θ = reconstruct(state.θ, sym=>x_)  # not sure how to do this with Accessors
-    model = reconstruct(state.model, sym=>x_)
+    model = hasfield(CoarseModel, sym) ? 
+        reconstruct(state.model, sym=>x_) : state.model  
     # XXX assuming complete divergence!
     G = log_gff_matrix(model)
     logπ_ = logprior(priors, θ) 

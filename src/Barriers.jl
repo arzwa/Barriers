@@ -12,6 +12,7 @@ using Accessors
 using WrightDistribution
 using Interpolations
 using StatsBase
+using Printf
 using Base.Iterators: partition
 using SpecialFunctions
 

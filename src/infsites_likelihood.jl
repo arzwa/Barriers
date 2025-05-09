@@ -43,7 +43,8 @@ end
 
 classify2(x) = findfirst(y->y==classify(x), states)
 
-function getcounts(L, x)
+getcounts(X::AbstractMatrix, L) = getcounts(collect(eachrow(X)), L)
+function getcounts(x::AbstractVector, L)
     cts = countmap(x)
     y = Dict(k => 0 for k in states)
     for (k,v) in cts
