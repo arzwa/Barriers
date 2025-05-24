@@ -1,5 +1,5 @@
-
-# Migration is A->B forward in time
+# Migration is from B->A backwards in time, see `sitepr`
+# Migration is A->B forward in time, i.e. B is the island
 function CLModel(m, μ, a, b, n)
     p = probs(m, μ, a, b)
     return Multinomial(n, p)
@@ -29,11 +29,17 @@ end  # Multinomial
 
 function logpdfcl(m, μ, a, b, x, γ=1.0)
     p = siteprobs(m, μ, a, b)
-    y = x .* γ  # pseudo counts
-    sum(log.(p) .* y)
+    if !isprobvec(p) 
+        @warn "Not a probability vector!"
+        return -Inf
+    else
+        y = x .* γ  # pseudo counts
+        sum(log.(p) .* y)
+    end
 end  # Categorical
 
 function classify(x)
+    any(ismissing, x) && return missing
     (x[1] == x[2] == x[3] == x[4]) && return "F"
 	(x[1] == x[2] && x[3] == x[4]) && return "FD"
 	(x[1] != x[2] && x[3] == x[4]) && return "HA"
@@ -99,7 +105,9 @@ function get_counts_windows2(data::Vector{<:Tuple}, winsize)
             temp = String[]
             curr += winsize
         end
-        push!(temp, data[i][2])
+        if !ismissing(data[i][2])
+            push!(temp, data[i][2])
+        end
         i += 1
     end
     cm = countmap(temp)

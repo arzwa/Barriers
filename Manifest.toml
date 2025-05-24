@@ -2,7 +2,7 @@
 
 julia_version = "1.11.5"
 manifest_format = "2.0"
-project_hash = "f97ffedca4fc0e507824f88e11658b131d6f7cdb"
+project_hash = "e7be87ea055c350790b3f893f938113538ec4d8a"
 
 [[deps.ADTypes]]
 git-tree-sha1 = "30bb95a372787af850addf28ac937f1be7b79173"
@@ -248,7 +248,7 @@ version = "0.4.3"
     TypedTables = "9d95f2ec-7b3d-5a63-8d20-e2491e220bb9"
 
 [[deps.Barriers]]
-deps = ["Accessors", "AdaptiveProposals", "CSV", "Combinatorics", "DataFrames", "Distributions", "Fwd", "Interpolations", "KernelDensity", "LinearAlgebra", "Optim", "Parameters", "Plots", "Printf", "ProfileView", "ProgressMeter", "PyCall", "QuadGK", "Roots", "Serialization", "Setfield", "SpecialFunctions", "StatsBase", "StatsPlots", "Turing", "WrightDistribution"]
+deps = ["Accessors", "AdaptiveProposals", "CSV", "Combinatorics", "DataFrames", "Distributions", "Fwd", "Interpolations", "KernelDensity", "LinearAlgebra", "Optim", "Parameters", "Plots", "Printf", "ProfileView", "ProgressMeter", "PyCall", "QuadGK", "Roots", "Serialization", "Setfield", "SpecialFunctions", "StatsBase", "StatsPlots", "ThreadTools", "Turing", "WrightDistribution"]
 path = "/home/arzwa/dev/Barriers"
 uuid = "be6cf53a-a3bb-40b3-b177-46b1316354c6"
 version = "0.1.0"
@@ -2275,6 +2275,11 @@ version = "0.1.7"
 deps = ["InteractiveUtils", "Logging", "Random", "Serialization"]
 uuid = "8dfed614-e22c-5e08-85e1-65c5234f0b40"
 version = "1.11.0"
+
+[[deps.ThreadTools]]
+git-tree-sha1 = "e335e40d393ccc1e1aa8087632989e856db988e0"
+uuid = "dbf13d8f-d36e-4350-8970-f3a99faba1a8"
+version = "0.2.0"
 
 [[deps.Tracker]]
 deps = ["Adapt", "ChainRulesCore", "DiffRules", "ForwardDiff", "Functors", "LinearAlgebra", "LogExpFunctions", "MacroTools", "NNlib", "NaNMath", "Optimisers", "Printf", "Random", "Requires", "SpecialFunctions", "Statistics"]

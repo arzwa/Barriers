@@ -1,4 +1,6 @@
 ---
+title: Notes on modeling heterogeneous gene flow across the genome
+author: Arthur Zwaenepoel
 geometry: margin=1in
 fontsize: 12pt
 ---
@@ -113,9 +115,9 @@ patterns in observed data and use a Multinomial likelihood. Setting the
 mutation rate to some reasonable estimate, one can then estimate parameters on
 the time-scale set by the mutation rate.
 
-A similar CL approach may be possible under the IM model, where the
-site-pattern likelihoods could be obtained using the generating function
-approach (perhaps symbolically?).
+**Important challenge**: A similar CL approach may be possible under the IM
+model, where the site-pattern likelihoods could be obtained using the
+generating function approach (perhaps symbolically?).
 
 ## Bayesian inference with the composite likelihood
 
@@ -142,14 +144,28 @@ mutation rate I guess).
 We compsoite the likelihood over all available $2 \times 2$ samples from the
 $A$ and $B$ populations. 
 The $^c$ indicates that we use a power likelihood to calibrate the composite
-likelihood. For a $k_A \times k_B$ sample, we used $c = (k_A(k_A-1)/2 \times
+likelihood.
+For a $k_A \times k_B$ sample, we used $c = (k_A(k_A-1)/2 \times
 k_B(k_B-1)/2)^{-1}$, i.e. the reciprocal of the number of $2\times 2$
-comparisons. Here we assumed the available data to consist of $k_A=5$ samples
-form $A$ and $k_B=5$ from $B$.
+comparisons.
+This would be an overcorrection, as it corresponds roughly to the assumption
+that a single site provides a single site pattern count, whereas it should
+coorespond to an effective number of data points which is somehow in between 1
+and $c^{-1}$.[^perhaps]
+Here we assumed the available data to consist of $k_A=5$ samples form $A$ and
+$k_B=5$ from $B$.
 @Fig:trace1 shows trace plots and marginal posterior densities.
 @Fig:post1 shows the inferred number of selected sites in each window and the
 inferred $m_e$ profile.
 It seems that we do recover a reasonable $m_e$ profile.
+
+[^perhaps]: Perhaps it would be better to use something like $((k_A +
+k_B)/2)/(k_A(k_A-1)/2 \times k_B(k_B-1)/2)$. Somehow the number of effective
+comparisons should be related to the number of nodes in the genealogy, which is
+linear in the number of leaves, but it is complicated by the two-population
+setting, so should it be proportional to the number of nodes in the
+subpopulation genealogies? It would be good to check with our empirical
+calibration approach.
 
 ![
 Example of a forward simulation.
@@ -178,5 +194,70 @@ to the true values for the other parameters.
 Marginal posterior distribution for the number of selected sites and $m_e$ in each
 window, based on the same sample as displayed in @fig:trace1.
 ](/home/arzwa/vimwiki/build/img/2025-05-05-post.pdf){#fig:post1}
+
+
+## Empirical calibration of the composite likelihood
+
+The composite likelihood yields an unbiased approximation to the true
+likelihood (in the sense that MLE's are unbiased), but yields to narrow
+credible intervals in a Bayesian context. This is because we treat the data
+(sites, $2 \times 2$ comparisons) as independent, wherease they are not
+(because of linkage and the genealogical tree relating all samples, 
+respectively). We can use a power likelihood to correct for this
+overconfidence, i.e. we raise the lieklihood to some power $c$, where $c < 1$.
+One can think of this as rescaling the likelihood by figuring out how many
+effectively independent data points one has (roughly: we have $c$ effective
+data points per site that enters the composite likelihood calculation).
+
+The question remains: how to choose $c$?
+Recall that we have chopped the genome in windows. We assume that compositing
+window likelihoods is OK (linkage is sufficiently weak between windows).
+A possible empirical approach to obtain a decent value of $c$ is the following:
+
+1. For a given parameter set $\theta = (m, N_{e,A}, N_{e,B}, u)$, simulate an
+   $n \times n$ sample $y$ from the coalescent with recombination for a stretch of
+   genome corresponding to the window size.
+2. Determine the posterior distribution $p(m|y)$ using ABC (conditioning on the
+   true values for the other parameters).
+3. Choose $\hat{c} = \mathrm{argmin}KL(p(m|y), p_c(m|y))$, where $p_c(m|y)$ is
+   the posterior with the composite likelihood as sampling distribution.
+
+The overall idea/motivation is: full-scale ABC is infeasible, but we can do ABC
+on a small scale (single window, single parameter) to inform the composite
+likelihood calibration.
+
+There are a couple of issues with this.
+
+1. It is noisy, as it depends on a single realization of the coalescent $(y)$
+   which is noisy. (possible solution: we can repeat the procedure and get the
+   mean of $\hat{c}$).
+2. How should one choose the other parameters? Do they matter (much)? Some
+   preliminary simulations suggest they do matter.
+
+### Implementation details of the calibration approach
+
+There are many ways to do the ABC-based calibration outlined above.
+A basic approach which appears to work is as follows:
+
+1. Simulate a data set from $y | \theta, m$, calculate the jSFS. Call this the
+   calibration data set.
+2. Simulate $n_{ABC}$ data sets from $y | \theta$, i.e. integrating over the
+   prior (draw $m$ from the prior, draw $y | \theta, m$ as in (1), using the
+   same sample size as in (1). Calculate the jSFS, and calculate the sum of
+   squared differences $SSD$ between this jSFS and the jSFS of the calibration
+   data set.
+3. Obtain the subset of (2) for which $SSD < \epsilon$, where $\epsilon$ is for
+   instance the 0.05 percentile of the $SSD$ values. The associated $m$ values
+   are an ABC approximation to the posterior $p(m | \theta, y)$.
+4. Fit a Lognormal (or Gamma) approximation to $p(m | \theta, y)$.
+5. Find $\hat{c} = \mathrm{argmin}_c KL(p(m| \theta, y), p_c(m|\theta, y))$
+6. Repeat this a number of times and take the mean of the $\hat{c}$ values.
+
+Doing this for the simulation data set analyzed above, we get $\hat{c} \approx
+0.0005$ for a $10 \times 10$ sample (@fig:calibrated).
+
+![
+Results with the calibrated CL.
+](/home/arzwa/vimwiki/build/img/2025-05-20-fwdsim-10x10-c0005.pdf){#fig:calibrated}
 
 ## References
