@@ -23,9 +23,9 @@ A container for the parameters of the calibratoin simulations.
 end
 
 struct CalibrationSimResults{T,U,V}
-    G   :: Matrix{Int}  # simulations
-    Z   :: U            # pair data
-    tbl :: Matrix{T}    # ABC table (distance, weight, m)
+    G     :: Matrix{Int}  # simulations
+    Z     :: U            # pair data
+    tbl   :: Matrix{T}    # ABC table (distance, weight, m)
     prior :: V
 end
 
@@ -36,7 +36,7 @@ function sims(θ::CalibrationSims;
     G = msprime_sims(θ)
     A = 1:na; B=na+1:na+nb
     y = jsfs(G, A, B, L)
-    Z, z = getpairdata(G, A, B, L)
+    Z, z = getpairdata(G, A, B, L)  # inefficient
     res = abc_m(y, prior, nabc, θ) 
     CalibrationSimResults(G, Z, res, prior)
 end

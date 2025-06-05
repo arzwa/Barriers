@@ -40,12 +40,32 @@ function mepred(G, m)
 end
 
 function loglhood(X::AbstractVector, l, θ, logmₑ)
-    mapreduce(i->winlogpdf(X[i], l[i], θ, exp(logmₑ[i])), +, 1:length(X))
+    @unpack κ, K = θ
+    if K == 1  # single Nₑ
+        mapreduce(i->winlogpdf(X[i], l[i], θ, exp(logmₑ[i])), +, 1:length(X))
+    else  # K Nₑ classes, according to some distribution 
+        κs = discretize(Gamma(1/κ, κ), K)
+        mapreduce(i->winlogpdf_mixture(X[i], l[i], θ, exp(logmₑ[i]), κs), +, 1:length(X))
+    end
 end
 
 function winlogpdf(x, l, θ, m)
-    @unpack α, λ, u, γ = θ
+    @unpack α, λ, u, γ, κ, K = θ
     logpdfcl(m, u, α*λ, λ, x, γ*l)
+end
+
+winlogpdf_mixture(args...) = logsumexp(winlogpdf_components(args...)) 
+
+function winlogpdf_components(x, l, θ, m, κs)
+    @unpack α, λ, u, γ, K = θ
+    ℓs = map(r->logpdfcl(m, u, α*λ*r, λ*r, x, γ*l), κs) .- log(K)
+end
+
+function discretize(d, K)
+    qstart = 1.0/2K
+    qend = 1. - 1.0/2K
+    xs = quantile.(d, qstart:(1/K):qend)
+    xs .* (mean(d)*K/sum(xs))  # rescale by factor mean(d)/mean(xs)
 end
 
 # XXX assuming complete divergence...
@@ -151,4 +171,45 @@ function mh_update(smplr, state, sym)
         return state
     end
 end
+
+function me_posterior_mixture(smplr, θs, Xs)
+    @unpack y, l = smplr.data
+    state = Barriers.initialize(smplr)
+    map(1:length(θs)) do i
+        # get mₑ's (complete divergence model, drift not involved)
+        θ = θs[i]
+        X = Xs[i]
+        model = reconstruct(state.model, s=θ.s, m=θ.m, X=X)
+        mes = θ.m * Barriers.gff(model)
+        # get Nₑ in the discrete mixture model
+        @unpack κ, K, λ, α = θ
+        κs = discretize(Gamma(1/κ, κ), K)
+        map(1:length(y)) do j
+            ℓs = winlogpdf_components(y[j], l[j], θ, mes[j], κs)
+            ps = lognormalize(ℓs)
+            r  = sample(κs, Weights(ps))
+            NB = 1/(2λ*r)
+            NA = 1/(2λ*α*r)
+            fst = Barriers.pairfst_unidirectional_island(mes[j], 2NA, 2NB)
+            (me=mes[j], fst=fst, r=r, NA=NA, NB=NB)
+        end |> _permutedims
+    end 
+end 
+
+function summarize_wins(xs, q1=0.025, q2=0.975)
+    xm = mean(xs)
+    nwin = length(xm)
+    x1 = map(i->xm[i] - quantile(getindex.(xs, i), 0.025), 1:nwin)
+    x2 = map(i->quantile(getindex.(xs, i), 0.975) - xm[i], 1:nwin)
+    xm, (x1, x2)
+end
+
+function _permutedims(xs)
+    exemplar = first(xs)
+    ys = map(keys(exemplar)) do key
+        key => getfield.(xs, key)
+    end
+    (; ys...)
+end
+
 

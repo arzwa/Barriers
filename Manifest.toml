@@ -2,7 +2,7 @@
 
 julia_version = "1.11.5"
 manifest_format = "2.0"
-project_hash = "e7be87ea055c350790b3f893f938113538ec4d8a"
+project_hash = "f9c4bd8dab3860a7293e5d13cde821c71d0badee"
 
 [[deps.ADTypes]]
 git-tree-sha1 = "30bb95a372787af850addf28ac937f1be7b79173"
@@ -248,7 +248,7 @@ version = "0.4.3"
     TypedTables = "9d95f2ec-7b3d-5a63-8d20-e2491e220bb9"
 
 [[deps.Barriers]]
-deps = ["Accessors", "AdaptiveProposals", "CSV", "Combinatorics", "DataFrames", "Distributions", "Fwd", "Interpolations", "KernelDensity", "LinearAlgebra", "Optim", "Parameters", "Plots", "Printf", "ProfileView", "ProgressMeter", "PyCall", "QuadGK", "Roots", "Serialization", "Setfield", "SpecialFunctions", "StatsBase", "StatsPlots", "ThreadTools", "Turing", "WrightDistribution"]
+deps = ["Accessors", "AdaptiveProposals", "CSV", "ColorSchemes", "Combinatorics", "DataFrames", "Distributions", "Fwd", "Interpolations", "KernelDensity", "LinearAlgebra", "Optim", "Parameters", "Plots", "Printf", "ProfileView", "ProgressMeter", "PyCall", "QuadGK", "Roots", "Serialization", "Setfield", "SpecialFunctions", "StatsBase", "StatsFuns", "StatsPlots", "ThreadTools", "Turing", "WrightDistribution"]
 path = "/home/arzwa/dev/Barriers"
 uuid = "be6cf53a-a3bb-40b3-b177-46b1316354c6"
 version = "0.1.0"
@@ -370,9 +370,9 @@ version = "0.7.6"
 
 [[deps.ColorSchemes]]
 deps = ["ColorTypes", "ColorVectorSpace", "Colors", "FixedPointNumbers", "PrecompileTools", "Random"]
-git-tree-sha1 = "c785dfb1b3bfddd1da557e861b919819b82bbe5b"
+git-tree-sha1 = "403f2d8e209681fcbd9468a8514efff3ea08452e"
 uuid = "35d6a980-a343-548e-a6ea-1d62b119f2f4"
-version = "3.27.1"
+version = "3.29.0"
 
 [[deps.ColorTypes]]
 deps = ["FixedPointNumbers", "Random"]
@@ -2178,9 +2178,9 @@ version = "0.34.3"
 
 [[deps.StatsFuns]]
 deps = ["HypergeometricFunctions", "IrrationalConstants", "LogExpFunctions", "Reexport", "Rmath", "SpecialFunctions"]
-git-tree-sha1 = "b423576adc27097764a90e163157bcfc9acf0f46"
+git-tree-sha1 = "8e45cecc66f3b42633b8ce14d431e8e57a3e242e"
 uuid = "4c63d2b9-4356-54db-8cca-17b64c39e42c"
-version = "1.3.2"
+version = "1.5.0"
 weakdeps = ["ChainRulesCore", "InverseFunctions"]
 
     [deps.StatsFuns.extensions]

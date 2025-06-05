@@ -1,0 +1,361 @@
+<h2
+id="approximation-of-the-effective-migration-rate-in-windows">Approximation
+of the effective migration rate in windows</h2>
+<p>We approximate the gff in window <span
+class="math inline"><em>i</em></span> of map length <span
+class="math inline"><em>L</em><sub><em>i</em></sub></span> by <span
+class="math display"><em>g</em><sub><em>i</em></sub> = <em>g</em><sub><em>i</em><em>i</em></sub>∏<sub><em>j</em> ≠ <em>i</em></sub><em>g</em><sub><em>i</em><em>j</em></sub></span>
+where <span class="math display">$$g_{ii} = \frac{1}{L_i}\int_{0}^{L_i}
+    \exp\left(-\sum_{j=1}^{X_i} \frac{s\Delta}{s\Delta + m + r(x_j,
+x)}\right) dx$$</span> and <span class="math display">$$g_{ij} =
+\exp\left( -\frac{s\Delta X_j}{s\Delta + m + \bar{r}_{ij}}
+\right)$$</span> Here <span class="math inline"><em>Δ</em></span> is a
+measure of the allele frequency divergence at selected loci between the
+two populations. In the detailed model of <span class="citation"
+data-cites="zwaenepoel2024">@zwaenepoel2024</span>, expected allele
+frequency divergence due to genetic drift is predicted at each selected
+locus individually. In this coarse-grained approximation, we account for
+partial divergence through a single quantity <span
+class="math inline"><em>Δ</em></span> instead. Note that one could in
+principle also work with the expected divergence for each window.
+Setting <span class="math inline"><em>Δ</em> = 1</span> amounts to
+assuming complete divergence, i.e. selection is strong relative to drift
+(<span
+class="math inline"><em>N</em><sub><em>e</em></sub><em>s</em> ≫ 1</span>).</p>
+<p>A crude way to estimate a single <span
+class="math inline"><em>Δ</em></span> is by using the harmonic mean
+recombination rate among selected loci and solving for the allele
+frequencies using the fixed-point iteration outlined in <span
+class="citation" data-cites="sachdeva2022">@sachdeva2022</span> and
+<span class="citation"
+data-cites="zwaenepoel2024">@zwaenepoel2024</span>.</p>
+<p><strong>Note:</strong> Accounting for partial divergence in this way
+is likely not very relevant, as it mostly amounts to substituting some
+<span
+class="math inline"><em>s</em><sub><em>e</em></sub> = <em>s</em><em>Δ</em></span>
+for <span class="math inline"><em>s</em></span> in the complete
+divergence model. This is not entirely true of course, since <span
+class="math inline"><em>Δ</em></span> depends on <span
+class="math inline"><em>s</em></span> in a complicated way. It would
+become more relevant if we allow for heterogeneous selection
+coefficients across the genome, in which case we may have that some loci
+are subject to swamping while other remain differentiated.</p>
+<figure>
+<embed
+src="/home/arzwa/vimwiki/build/img/2025-05-04-partial-divergence-ex.pdf" />
+<figcaption aria-hidden="true">Example of the coarse <span
+class="math inline"><em>m</em><sub><em>e</em></sub></span> approximation
+when partial divergence matters.</figcaption>
+</figure>
+<figure>
+<embed
+src="/home/arzwa/vimwiki/build/img/2025-05-04-complete-divergence-ex.pdf" />
+<figcaption aria-hidden="true">Example of the coarse <span
+class="math inline"><em>m</em><sub><em>e</em></sub></span> approximation
+when divergence is essentially complete.</figcaption>
+</figure>
+<h2 id="bayesian-inference-using-mcmc">Bayesian inference using
+MCMC</h2>
+<p>For observed data <span class="math inline"><em>y</em></span>, we
+have the following generative model where <span
+class="math inline"><em>ν</em></span> is the density of selected sites
+per unit of map length, <span
+class="math inline"><em>X</em><sub><em>i</em></sub></span> the number of
+selected sites in window <span class="math inline"><em>i</em></span>,
+<span class="math inline"><em>L</em><sub><em>i</em></sub></span> the map
+length of window <span class="math inline"><em>i</em></span>, <span
+class="math inline"><em>y</em><sub><em>i</em></sub></span> the data in
+window <span class="math inline"><em>i</em></span>, and <span
+class="math inline"><em>θ</em></span> lumps together all other
+(hyper)parameters (<span
+class="math inline"><em>m</em>, <em>s</em>, <em>u</em>, <em>N</em><sub><em>e</em></sub>, …</span>).</p>
+<p>We devise a sampling scheme which makes use of the conjugacy of the
+Poisson and Gamma distributions. Specifically, we use a Gibbs sampler
+that cycles through the following updates: where for the first sampling
+step we use a Metropolis-Hastings update, for the second we sample from
+the analytically available posterior (exploiting conjugacy) and for the
+third we calculate the posterior probabilities <span
+class="math display">$$\Pr\{X_i = k|y, \nu, \theta\}
+  = \frac{f(y|X_i=k, \nu,
+\theta)\Pr\{X_i=k|\nu\}}{\sum_{j=0}^{l}f(y|X_i=j,
+  \nu, \theta)\Pr\{X_i=j|\nu\}}$$</span> for <span
+class="math inline"><em>X</em><sub><em>i</em></sub> = {0, 1, …, <em>l</em>}</span>,
+where <span class="math inline"><em>l</em></span> is chosen so that
+<span
+class="math inline">Pr {<em>X</em><sub><em>i</em></sub> &gt; <em>l</em>|<em>ν</em>} &lt; <em>ϵ</em></span>
+for some suitably chosen <span class="math inline"><em>ϵ</em></span>.
+This sampler is reasonably efficient.</p>
+<h2 id="composite-likelihood-for-the-two-population-model">Composite
+likelihood for the two-population model</h2>
+<p>We outline a composite likelihood approach similar to the one used by
+<span class="citation" data-cites="elyashiv2016">@elyashiv2016</span>
+and <span class="citation" data-cites="murphy2022">@murphy2022</span>,
+but in the context of a two-deme model.</p>
+<p>We assume two demes, labeled <span
+class="math inline"><em>A</em></span> and <span
+class="math inline"><em>B</em></span>, connected by unidirectional
+migration forward in time from <span
+class="math inline"><em>B</em></span> to <span
+class="math inline"><em>A</em></span> (so that, backward in time,
+lineages move from <span class="math inline"><em>A</em></span> to <span
+class="math inline"><em>B</em></span> at rate <span
+class="math inline"><em>m</em></span>). Each deme is assumed to follow
+neutral Wright-Fisher dynamics, with coalescence rates <span
+class="math inline"><em>λ</em><sub><em>A</em></sub> = 1/2<em>N</em><sub><em>A</em></sub></span>
+and <span
+class="math inline"><em>λ</em><sub><em>B</em></sub> = 1/2<em>N</em><sub><em>B</em></sub></span>
+in population <span class="math inline"><em>A</em></span> and <span
+class="math inline"><em>B</em></span> respectively. We assume an
+infinite-sites model where mutations occur at rate <span
+class="math inline"><em>μ</em></span> per site, and each mutation occurs
+at a previously unmutated site.</p>
+<p>Considering a sample of two haplotypes from each population (or a
+single diploid individual in each population), we can distinguish five
+different states or site patterns</p>
+<table>
+<colgroup>
+<col style="width: 3%" />
+<col style="width: 29%" />
+<col style="width: 67%" />
+</colgroup>
+<tbody>
+<tr>
+<td><code>F</code></td>
+<td>fixed</td>
+<td>all samples are fixed for the same allele</td>
+</tr>
+<tr>
+<td><code>FD</code></td>
+<td>fixed difference</td>
+<td>samples from the different populations are fixed for alternative
+alleles.</td>
+</tr>
+<tr>
+<td><code>HA</code></td>
+<td>heterozygous in <span class="math inline"><em>A</em></span></td>
+<td>the samples from <span class="math inline"><em>A</em></span> have
+different alleles, whereas those from <span
+class="math inline"><em>B</em></span> have identical alleles</td>
+</tr>
+<tr>
+<td><code>HB</code></td>
+<td>heterozygous in <span class="math inline"><em>B</em></span></td>
+<td>the samples from <span class="math inline"><em>B</em></span> have
+different alleles, whereas those from <span
+class="math inline"><em>A</em></span> have identical alleles</td>
+</tr>
+<tr>
+<td><code>HAB</code></td>
+<td>heterozygous in <span class="math inline"><em>A</em></span> and
+<span class="math inline"><em>B</em></span></td>
+<td>the samples within each population have different alleles</td>
+</tr>
+</tbody>
+</table>
+<p>Under the stated model, one can determine in a relatively
+straightforward manner the probability of each states given the relative
+rates of mutation, coalescence and migration, as these are competing
+exponential processes, and the state is determined as soon as a mutation
+happens (as a consequence of the infinite sites assumption). The
+expressions are highly unwieldy, but are readily found using a computer
+algebra system. A simple composite (CL) likelihood approach then
+suggests itself: count site patterns in observed data and use a
+Multinomial likelihood. Setting the mutation rate to some reasonable
+estimate, one can then estimate parameters on the time-scale set by the
+mutation rate.</p>
+<p><strong>Important challenge</strong>: A similar CL approach may be
+possible under the IM model, where the site-pattern likelihoods could be
+obtained using the generating function approach (perhaps
+symbolically?).</p>
+<h2 id="bayesian-inference-with-the-composite-likelihood">Bayesian
+inference with the composite likelihood</h2>
+<p><span class="citation" data-cites="Fig:sims">@Fig:sims</span> shows
+results from a forward simulation with 100 loci under selection along a
+10M chromosome (a one-chromosome genome, say). The detailed theory of
+<span class="citation"
+data-cites="zwaenepoel2024">@zwaenepoel2024</span> fits the observations
+quite nicely. Partial divergence appears to matter, but there seems to
+be no swamping and we assume a homogeneous architecture, so one can
+accommodate this by inferring a smaller selection coefficient I
+think.</p>
+<p>We conduct inference for the following model: The mutation rate is
+assumed known (one could also assume a known scaled mutation rate I
+guess). We compsoite the likelihood over all available <span
+class="math inline">2 × 2</span> samples from the <span
+class="math inline"><em>A</em></span> and <span
+class="math inline"><em>B</em></span> populations. The <span
+class="math inline"><sup><em>c</em></sup></span> indicates that we use a
+power likelihood to calibrate the composite likelihood. For a <span
+class="math inline"><em>k</em><sub><em>A</em></sub> × <em>k</em><sub><em>B</em></sub></span>
+sample, we used <span
+class="math inline"><em>c</em> = (<em>k</em><sub><em>A</em></sub>(<em>k</em><sub><em>A</em></sub> − 1)/2 × <em>k</em><sub><em>B</em></sub>(<em>k</em><sub><em>B</em></sub> − 1)/2)<sup>−1</sup></span>,
+i.e. the reciprocal of the number of <span
+class="math inline">2 × 2</span> comparisons. This would be an
+overcorrection, as it corresponds roughly to the assumption that a
+single site provides a single site pattern count, whereas it should
+coorespond to an effective number of data points which is somehow in
+between 1 and <span
+class="math inline"><em>c</em><sup>−1</sup></span>.<a href="#fn1"
+class="footnote-ref" id="fnref1" role="doc-noteref"><sup>1</sup></a>
+Here we assumed the available data to consist of <span
+class="math inline"><em>k</em><sub><em>A</em></sub> = 5</span> samples
+form <span class="math inline"><em>A</em></span> and <span
+class="math inline"><em>k</em><sub><em>B</em></sub> = 5</span> from
+<span class="math inline"><em>B</em></span>. <span class="citation"
+data-cites="Fig:trace1">@Fig:trace1</span> shows trace plots and
+marginal posterior densities. <span class="citation"
+data-cites="Fig:post1">@Fig:post1</span> shows the inferred number of
+selected sites in each window and the inferred <span
+class="math inline"><em>m</em><sub><em>e</em></sub></span> profile. It
+seems that we do recover a reasonable <span
+class="math inline"><em>m</em><sub><em>e</em></sub></span> profile.</p>
+<figure id="fig:sims">
+<embed src="/home/arzwa/vimwiki/build/img/2025-05-05-fwdsim-ex.pdf" />
+<figcaption aria-hidden="true">Example of a forward simulation. We
+assume the two-island model, with two populations of size 500, assuming
+unidirectional migration at rate <span
+class="math inline"><em>m</em> = 0.008</span> and 100 selected biallelic
+loci uniformly scattered across the genome, each with selection
+coefficient <span class="math inline"><em>s</em> = 0.01</span>. In
+addition, we track evolution at 100.000 neutral biallelic loci. Top row,
+left: predicted vs. observed allele frequency divergence at selected
+sites. Vertical lines are the locations of selected sites. Top row,
+right: predicted vs. observed <span
+class="math inline"><em>F</em><sub>ST</sub></span> (neutral sites,
+averaged in windows). Middle row: different <span
+class="math inline"><em>m</em><sub><em>e</em></sub></span> predictions.
+Bottom row: different <span
+class="math inline"><em>F</em><sub>ST</sub></span>
+predictions.</figcaption>
+</figure>
+<figure id="fig:trace1">
+<embed src="/home/arzwa/vimwiki/build/img/2025-05-05-trace.pdf" />
+<figcaption aria-hidden="true">Trace plots for inference <span
+class="math inline"><em>m</em>, <em>s</em>, <em>λ</em> = 1/<em>N</em><sub><em>e</em>, <em>A</em></sub>, <em>α</em> = <em>N</em><sub><em>e</em>, <em>A</em></sub>/<em>N</em><sub><em>e</em>, <em>B</em></sub></span>
+and <span class="math inline"><em>ν</em></span> for a <span
+class="math inline">5 × 5</span> sample of the simulated data (cfr.
+<span class="citation" data-cites="fig:sims">@fig:sims</span>). We use
+<span class="math inline"><em>c</em> = 0.01</span> as power likelihood.
+The mutation rate <span class="math inline"><em>u</em></span> is assumed
+known. A Gamma(10,1) prior is assumed for <span
+class="math inline"><em>ν</em></span>, and exponential priors with mean
+set to the true values for the other parameters.</figcaption>
+</figure>
+<figure id="fig:post1">
+<embed src="/home/arzwa/vimwiki/build/img/2025-05-05-post.pdf" />
+<figcaption aria-hidden="true">Marginal posterior distribution for the
+number of selected sites and <span
+class="math inline"><em>m</em><sub><em>e</em></sub></span> in each
+window, based on the same sample as displayed in <span class="citation"
+data-cites="fig:trace1">@fig:trace1</span>.</figcaption>
+</figure>
+<h2 id="empirical-calibration-of-the-composite-likelihood">Empirical
+calibration of the composite likelihood</h2>
+<p>The composite likelihood yields an unbiased approximation to the true
+likelihood (in the sense that MLE’s are unbiased), but yields to narrow
+credible intervals in a Bayesian context. This is because we treat the
+data (sites, <span class="math inline">2 × 2</span> comparisons) as
+independent, wherease they are not (because of linkage and the
+genealogical tree relating all samples, respectively). We can use a
+power likelihood to correct for this overconfidence, i.e. we raise the
+lieklihood to some power <span class="math inline"><em>c</em></span>,
+where <span class="math inline"><em>c</em> &lt; 1</span>. One can think
+of this as rescaling the likelihood by figuring out how many effectively
+independent data points one has (roughly: we have <span
+class="math inline"><em>c</em></span> effective data points per site
+that enters the composite likelihood calculation).</p>
+<p>The question remains: how to choose <span
+class="math inline"><em>c</em></span>? Recall that we have chopped the
+genome in windows. We assume that compositing window likelihoods is OK
+(linkage is sufficiently weak between windows). A possible empirical
+approach to obtain a decent value of <span
+class="math inline"><em>c</em></span> is the following:</p>
+<ol type="1">
+<li>For a given parameter set <span
+class="math inline"><em>θ</em> = (<em>m</em>, <em>N</em><sub><em>e</em>, <em>A</em></sub>, <em>N</em><sub><em>e</em>, <em>B</em></sub>, <em>u</em>)</span>,
+simulate an <span class="math inline"><em>n</em> × <em>n</em></span>
+sample <span class="math inline"><em>y</em></span> from the coalescent
+with recombination for a stretch of genome corresponding to the window
+size.</li>
+<li>Determine the posterior distribution <span
+class="math inline"><em>p</em>(<em>m</em>|<em>y</em>)</span> using ABC
+(conditioning on the true values for the other parameters).</li>
+<li>Choose <span
+class="math inline"><em>ĉ</em> = argmin<em>K</em><em>L</em>(<em>p</em>(<em>m</em>|<em>y</em>), <em>p</em><sub><em>c</em></sub>(<em>m</em>|<em>y</em>))</span>,
+where <span
+class="math inline"><em>p</em><sub><em>c</em></sub>(<em>m</em>|<em>y</em>)</span>
+is the posterior with the composite likelihood as sampling
+distribution.</li>
+</ol>
+<p>The overall idea/motivation is: full-scale ABC is infeasible, but we
+can do ABC on a small scale (single window, single parameter) to inform
+the composite likelihood calibration.</p>
+<p>There are a couple of issues with this.</p>
+<ol type="1">
+<li>It is noisy, as it depends on a single realization of the coalescent
+<span class="math inline">(<em>y</em>)</span> which is noisy. (possible
+solution: we can repeat the procedure and get the mean of <span
+class="math inline"><em>ĉ</em></span>).</li>
+<li>How should one choose the other parameters? Do they matter (much)?
+Some preliminary simulations suggest they do matter.</li>
+</ol>
+<h3
+id="implementation-details-of-the-calibration-approach">Implementation
+details of the calibration approach</h3>
+<p>There are many ways to do the ABC-based calibration outlined above. A
+basic approach which appears to work is as follows:</p>
+<ol type="1">
+<li>Simulate a data set from <span
+class="math inline"><em>y</em>|<em>θ</em>, <em>m</em></span>, calculate
+the jSFS. Call this the calibration data set.</li>
+<li>Simulate <span
+class="math inline"><em>n</em><sub><em>A</em><em>B</em><em>C</em></sub></span>
+data sets from <span class="math inline"><em>y</em>|<em>θ</em></span>,
+i.e. integrating over the prior (draw <span
+class="math inline"><em>m</em></span> from the prior, draw <span
+class="math inline"><em>y</em>|<em>θ</em>, <em>m</em></span> as in (1),
+using the same sample size as in (1). Calculate the jSFS, and calculate
+the sum of squared differences <span
+class="math inline"><em>S</em><em>S</em><em>D</em></span> between this
+jSFS and the jSFS of the calibration data set.</li>
+<li>Obtain the subset of (2) for which <span
+class="math inline"><em>S</em><em>S</em><em>D</em> &lt; <em>ϵ</em></span>,
+where <span class="math inline"><em>ϵ</em></span> is for instance the
+0.05 percentile of the <span
+class="math inline"><em>S</em><em>S</em><em>D</em></span> values. The
+associated <span class="math inline"><em>m</em></span> values are an ABC
+approximation to the posterior <span
+class="math inline"><em>p</em>(<em>m</em>|<em>θ</em>, <em>y</em>)</span>.</li>
+<li>Fit a Lognormal (or Gamma) approximation to <span
+class="math inline"><em>p</em>(<em>m</em>|<em>θ</em>, <em>y</em>)</span>.</li>
+<li>Find <span
+class="math inline"><em>ĉ</em> = argmin<sub><em>c</em></sub><em>K</em><em>L</em>(<em>p</em>(<em>m</em>|<em>θ</em>, <em>y</em>), <em>p</em><sub><em>c</em></sub>(<em>m</em>|<em>θ</em>, <em>y</em>))</span></li>
+<li>Repeat this a number of times and take the mean of the <span
+class="math inline"><em>ĉ</em></span> values.</li>
+</ol>
+<p>Doing this for the simulation data set analyzed above, we get <span
+class="math inline"><em>ĉ</em> ≈ 0.0005</span> for a <span
+class="math inline">10 × 10</span> sample (<span class="citation"
+data-cites="fig:calibrated">@fig:calibrated</span>).</p>
+<figure id="fig:calibrated">
+<embed
+src="/home/arzwa/vimwiki/build/img/2025-05-20-fwdsim-10x10-c0005.pdf" />
+<figcaption aria-hidden="true">Results with the calibrated
+CL.</figcaption>
+</figure>
+<h2 id="references">References</h2>
+<section id="footnotes" class="footnotes footnotes-end-of-document"
+role="doc-endnotes">
+<hr />
+<ol>
+<li id="fn1"><p>Perhaps it would be better to use something like <span
+class="math inline">((<em>k</em><sub><em>A</em></sub> + <em>k</em><sub><em>B</em></sub>)/2)/(<em>k</em><sub><em>A</em></sub>(<em>k</em><sub><em>A</em></sub> − 1)/2 × <em>k</em><sub><em>B</em></sub>(<em>k</em><sub><em>B</em></sub> − 1)/2)</span>.
+Somehow the number of effective comparisons should be related to the
+number of nodes in the genealogy, which is linear in the number of
+leaves, but it is complicated by the two-population setting, so should
+it be proportional to the number of nodes in the subpopulation
+genealogies? It would be good to check with our empirical calibration
+approach.<a href="#fnref1" class="footnote-back"
+role="doc-backlink">↩︎</a></p></li>
+</ol>
+</section>

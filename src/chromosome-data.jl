@@ -47,14 +47,15 @@ function overlaplen(int1, int2)
     (x0 <= y0 && x1 <= y1)  && return x1 - y0 + 1
 end
 
-function get_accsites_windows(chr, winsize)
-    @unpack acc, len = chr
+get_accsites_windows(chrom::ChromosomeData, windows) = 
+    get_accsites_windows(chrom.acc, windows)
+function get_accsites_windows(acc, windows)
     i = 1  # index going over accessible stretches
-    map(1:winsize:len) do w0
-        # window [w0, w0+winsize-1] or [w0, w0+winsize)
+    map(windows) do (w0, w1)
         n = 0  # counter for number of accessible sites in the window
-        while i <= length(acc) && isoverlapping(acc[i], w0:w0+winsize-1)
-            n += overlaplen(acc[i], w0:w0+winsize-1)
+        # note that windows are closed intervals (w0 and w1 are included in the window)
+        while i <= length(acc) && (acc[i][end] < w0 || isoverlapping(acc[i], w0:w1))
+            n += overlaplen(acc[i], w0:w1)
             i += 1
         end
         n
@@ -106,28 +107,32 @@ function _getsitestats(x, A, B)
         F=F, FD=FD, HA=HA, HB=HB, HAB=HAB)
 end
 
-function windowdata(chrom::ChromosomeData, ws, df=snpstats(chrom))
+function windowdata(chrom::ChromosomeData, windows, df=snpstats(chrom))
     @unpack len, xcol = chrom
-    windows = getwindows(chrom, ws)
-    ns = get_accsites_windows(chrom, ws)
+    ns = get_accsites_windows(chrom, windows)
     nc = _numcombos(chrom)
-    xdf = Barriers.window_df(df, windows, fun=x->sum(skipmissing(x)))
+    xdf = Barriers.window_df(df, windows, fun=x->sum(filter(!isnan, skipmissing(x))))
     xdf = hcat(xdf, DataFrame(:ns=>ns))
     sstats = [:piA, :piB, :piw, :pib, :fst]
     cstats = [:F, :FD, :HA, :HB, :HAB]
     _fun1(x) = (; [k=>x[k]/x[:ns] for k in sstats]...)
     _fun2(x) = (x[:F] + nc*x[:ns] - sum([x[k] for k in cstats]))
-    select(xdf, chrom.xcol, :x0, :x1, :xmid, :winlen, :ns,
+    select!(xdf, 
+        chrom.xcol, :w0, :w1, :wmid, :winlen, :ns,
         AsTable([:ns; sstats]) => ByRow(_fun1) => AsTable,
         AsTable([:ns; cstats]) => ByRow(_fun2) => :F,
         :FD, :HA, :HB, :HAB
     )
+    transform!(xdf, 
+        AsTable([:piw,:pib]) => ByRow(x->(x[:pib]-x[:piw])/(x[:pib]+x[:piw])) => :fstw
+    )
+    return xdf
 end
 
-function getwindows(chrom::ChromosomeData, ws)
-    @unpack len = chrom
+getwindows(chrom::ChromosomeData, ws) = getwindows(chrom.len, ws)
+function getwindows(len, ws)
     xs = [collect(1:ws:len) ; len+1]
-    [(xs[i], xs[i+1]) for i=1:length(xs)-1]
+    [(xs[i], xs[i+1]-1) for i=1:length(xs)-1]
 end
 
 """
@@ -143,13 +148,13 @@ function window_df(df, windows; fun=x->mean(filter(!isnan, skipmissing(x))), xco
     wdf = DataFrame(hcat(xs...), names(df))
     x0 = first.(windows)
     x1 = last.(windows)
-    wdf = hcat(DataFrame(:x0=>x0, :x1=>x1, :xmid=>mean.(windows), :winlen=>x1 .- x0), wdf) 
+    wdf = hcat(DataFrame(:w0=>x0, :w1=>x1, :wmid=>mean.(windows), :winlen=>x1 .- x0), wdf) 
     return wdf
 end
 
-function _winstat(stat, windows, xs, ys)
-    T = typeof(stat(ys))
-    zs = fill(NaN, length(windows))
+function _winstat(stat, windows, xs, ys::AbstractVector{T}) where T
+    V = typeof(stat(ys))
+    zs = Vector{V}(undef, length(windows))
     ywin = T[]
     i = 1  # site index
     j = 1  # window index

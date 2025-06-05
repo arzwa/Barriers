@@ -19,6 +19,7 @@ using Optim
 using ProgressMeter
 using PyCall
 using DataFrames
+using StatsFuns
 
 const Mb = 10^6
 const kb = 10^3
