@@ -37,6 +37,24 @@ we allow for heterogeneous selection coefficients across the genome, in which
 case we may have that some loci are subject to swamping while other remain
 differentiated.
 
+**But:** when there is heterogeneous selection, calculating/estimating a single
+$\Delta$ may not work at all. We could and should check how the coarse
+approximation behaves in the presence of heterogeneous selection and
+swamping (Himani also stressed this -- i.e. is the case with homogeneous
+selection relevant at all? I guess I find it so, as answering the question "if
+$s$ were constant, how many loci are there under selection" is already
+nontrivial to answer...).
+
+**Note:** The coarse-grained model with partial divergence, if it works (cfr.
+comments above), is tricky to combine with the mixture model approach to
+account for $N_e$ variation (due to BGS). This is because partial divergence
+depends on drift, so in the marginalization that is performed at each site, one
+would have to recalculate $m_e$ for everey component, and likely this involves
+a whole-genome calculation (unless I am overlooking something)... So if we want
+to combine $m_e$ and $N_e$ heterogeneity, I think one would have to condition
+on a specified $N_e$ profile, and not use some marginalized mixture model.
+
+
 ![
 Example of the coarse $m_e$ approximation when partial divergence matters. 
 ](/home/arzwa/vimwiki/build/img/2025-05-04-partial-divergence-ex.pdf)
@@ -45,6 +63,23 @@ Example of the coarse $m_e$ approximation when partial divergence matters.
 Example of the coarse $m_e$ approximation when divergence is essentially
 complete.
 ](/home/arzwa/vimwiki/build/img/2025-05-04-complete-divergence-ex.pdf)
+
+### Heterogeneous selection coefficients
+
+When we ignore heterogeneity in selection coefficients, it is unclear what we
+will infer. However, the coarse model outlined above with $\bar{s}$ for $s$
+yields not too different predictions -- it mostly seems to exaggerate the
+effect of weakly selected loci (@fig:coars-dfe). 
+But again, in an inference setting, where the data is
+heterogeneous but we use the coarse homogeneous model, it is unclear what this
+would mean for our inference, and to what extent one could hope to think of
+$\hat{s}$ as an estimator of $\bar{s}$.
+
+![
+$L=50$ from an exponential DFE in a setting where complete divergence is OK an
+assumption.
+](/home/arzwa/vimwiki/build/img/2025-06-06-coarse-dfe.pdf){#fig:coarse-dfe}
+
 
 ## Bayesian inference using MCMC
 
@@ -141,7 +176,7 @@ We conduct inference for the following model:
 \end{align*}
 The mutation rate is assumed known (one could also assume a known scaled
 mutation rate I guess).
-We compsoite the likelihood over all available $2 \times 2$ samples from the
+We composite the likelihood over all available $2 \times 2$ samples from the
 $A$ and $B$ populations. 
 The $^c$ indicates that we use a power likelihood to calibrate the composite
 likelihood.
@@ -151,7 +186,7 @@ comparisons.
 This would be an overcorrection, as it corresponds roughly to the assumption
 that a single site provides a single site pattern count, whereas it should
 coorespond to an effective number of data points which is somehow in between 1
-and $c^{-1}$.[^perhaps]
+and $c^{-1}$.[^perhaps] [^gimble]
 Here we assumed the available data to consist of $k_A=5$ samples form $A$ and
 $k_B=5$ from $B$.
 @Fig:trace1 shows trace plots and marginal posterior densities.
@@ -166,6 +201,10 @@ linear in the number of leaves, but it is complicated by the two-population
 setting, so should it be proportional to the number of nodes in the
 subpopulation genealogies? It would be good to check with our empirical
 calibration approach.
+
+[^gimble]: Note that gimble uses the $n_A \times n_B$ diploid comparisons. Not
+exactly sure why, is it because they don't assume phased data, but do use
+blocks of multiple sites?
 
 ![
 Example of a forward simulation.
@@ -254,10 +293,71 @@ A basic approach which appears to work is as follows:
 6. Repeat this a number of times and take the mean of the $\hat{c}$ values.
 
 Doing this for the simulation data set analyzed above, we get $\hat{c} \approx
-0.0005$ for a $10 \times 10$ sample (@fig:calibrated).
+0.0005$ for a $10 \times 10$ sample (@fig:calibrated), which is more or less
+accidentally about the reciprocal of the number of comparisons. Does it suggest
+that this heuristic (the reciprocal of the number of $2\times 2$ samples) is a
+good one to start from?
 
 ![
 Results with the calibrated CL.
 ](/home/arzwa/vimwiki/build/img/2025-05-20-fwdsim-10x10-c0005.pdf){#fig:calibrated}
+
+## Segmentation
+
+One idea I suddenly had is that the site pattern counts provide a 'sequence'
+which could be segmented as one does DNA sequence data. The idea that one can
+segment other types of sequence using such an approach I first encountered in a
+very different context @nakatani2017 while working on my PhD.
+This is interesting, since one would then segment based on empirical
+homogeneity in the site patterns, which sounds like it would give more relevant
+windows for inferring parameters in than choosing an arbitrary constant window
+size.
+I applied my old implementation of this (which I implemented for the inference
+of macrosynteny) and it worked out of the box (@fig:segmentation-ex).
+
+**Note:** I wonder to what extent these segments correspond to segments spanned
+by a single marginal tree in an inferred ARG?
+
+**Note:** In principle it would be possible to do everything jointly: instead
+of the Dirichlet-Multinomial likelihood, one could use the two deme coalescent
+composite likelihood. In fact, the power likelihood approach probably amounts
+somehow to a Dirichlet-Multinomial thing where the Dirichlet parameters are
+determined by the Coalescent composite likelihood + some pseudocount. Doing
+everything jointly is perhaps not feasible or very interesting, but this
+perspective of using a Dirichlet 'layer' in between is perhaps more helpful
+than the power likelihood view?
+
+![
+Segment $\fst$ estimates for the MAP segmentation vs. constant 100kb window
+segmentation.  (minimum window size 25kb, $\alpha=10$, we got 235 segments
+instead of the 481 windows of 100kb).
+](/home/arzwa/vimwiki/build/img/2025-06-06-segmentation.pdf){#fig:segmentation-ex}
+
+
+## Simulations
+
+### Full forward simulations
+
+These would have to include
+
+1. Divergent selection
+2. BGS
+3. Neutral loci
+
+We should probably use SLiM, so that we don't have to do (3) explicitly (use tree
+sequence recording). If I implement tree sequence recording in my forward
+simulations, I'll end up rewriting $x$% of `tskit` I fear...
+
+For (1) we should focus on the near complete divergence setting. For (2) we
+should focus on the 'strong' BGS limit, where the Hudson & Kaplan theory
+applies (and a rescaling of $N_e$ is fine). We should ignore more complicated
+regimes with selective interference initially.
+
+### Backward simulations based on $m_e$ approximations
+
+One could take the $m_e$ predictions from the coarse or detailed approximations
+in windows, and simulate data backward in time within these windows.
+I guess this is of interest to study the performance of the inference
+machinery, under the assumption that the many modeling assumptions hold.
 
 ## References

@@ -43,7 +43,7 @@ function loglhood(X::AbstractVector, l, θ, logmₑ)
     @unpack κ, K = θ
     if K == 1  # single Nₑ
         mapreduce(i->winlogpdf(X[i], l[i], θ, exp(logmₑ[i])), +, 1:length(X))
-    else  # K Nₑ classes, according to some distribution 
+    else  # K Nₑ classes, according to some distribution -- Beta appears best
         κs = discretize(Gamma(1/κ, κ), K)
         mapreduce(i->winlogpdf_mixture(X[i], l[i], θ, exp(logmₑ[i]), κs), +, 1:length(X))
     end

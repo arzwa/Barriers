@@ -94,7 +94,9 @@ function gff(eqmodel::Equilibrium, x)
     @unpack xs, loci = arch
     lg = 0.0
     for j=1:length(loci)
-        lg += locuseffect(loci[j], Ep[j], Epq[j], m, p̄[j], recrate(abs(x - xs[j])))
+        rij = recrate(abs(x-xs[j]))
+        le = locuseffect(loci[j], Ep[j], Epq[j], m, p̄[j], rij)
+        lg += le
     end
     exp(lg)
 end

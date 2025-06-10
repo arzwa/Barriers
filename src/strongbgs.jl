@@ -14,7 +14,7 @@ function B(model::BGSModel, x)
     @unpack xs, loci = model
     lB = 0.0
     for j=1:length(loci)
-        lB += locuseffect(loci[j], recrate(x, xs[j]))
+        lB += locuseffect(loci[j], recrate(abs(x - xs[j])))
     end
     return exp(-lB)
 end
