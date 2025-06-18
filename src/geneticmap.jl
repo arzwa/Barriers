@@ -88,3 +88,16 @@ function extrapolate_to(m::GeneticMap, chr_end::Int64; scale=10kb)
     GeneticMap([m.data; (chr_end, ml)])
 end
 
+function msprime_ratemap(recmap)
+    @unpack data = recmap
+    map(1:length(data)-1) do i
+        l = data[i][1]  # python index, left is included (closed-open interval)
+        l = l == 1 ? 0 : l
+        r = data[i+1][1]  # python index, right is excluded
+        d = data[i+1][2] - data[i][2]
+        span = r-l
+        rr = Barriers.recrate(d/span)
+        (left=l, right=r, mid=(l+r)÷2, span=span, rate=rr)
+    end |> DataFrame
+end
+

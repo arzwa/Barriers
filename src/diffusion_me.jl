@@ -3,6 +3,7 @@
     m    :: T
     p̄    :: Vector{T} = zeros(length(arch))
     N    :: V   # may be a vector, if we want to include Nₑ heterogeneity
+    mode :: Int = 1
 end
 
 struct Equilibrium{M,T}
@@ -13,17 +14,17 @@ end
 
 function Equilibrium(model::MainlandIslandModel; 
         p0=ones(length(model.arch)), tol=1e-9)
-    @unpack arch, p̄, N, m = model
+    @unpack arch, p̄, N, m, mode = model
     @unpack R, loci = arch
     pq0 = p0 .* (1 .- p0)
-    Ep, Epq = fixed_point_iteration(m, loci, R, N, p̄, p0, pq0, tol=tol)
+    Ep, Epq = fixed_point_iteration(m, loci, R, N, p̄, p0, pq0, mode, tol=tol)
     Equilibrium(model, Ep, Epq)
 end
 
 function distributions(eq::Equilibrium)
-    @unpack arch, p̄, N, m = eq.model
+    @unpack arch, p̄, N, m, mode = eq.model
     @unpack R, loci = arch
-    gs = gffs(m, loci, p̄, R, eq.Ep, eq.Epq) 
+    gs = gffs(m, loci, p̄, R, eq.Ep, eq.Epq, mode) 
     map(1:length(loci)) do i
         @unpack s, h, u = loci[i]
         d = Wright(-N*s, N*(m*gs[i]*p̄[i] + u), N*(m*gs[i]*(1-p̄[i]) + u), h) 
@@ -33,10 +34,10 @@ end
 getNe(N::Real, _) = N
 #getNe(N, i) = N[i]
 
-function fixed_point_iteration(m, loci, R, N, p̄, p, pq; tol=1e-9)
+function fixed_point_iteration(m, loci, R, N, p̄, p, pq, mode; tol=1e-9)
     L = length(loci) 
     while true
-        gs  = gffs(m, loci, p̄, R, p, pq) 
+        gs  = gffs(m, loci, p̄, R, p, pq, mode) 
         xs  = map(i->predict(loci[i], getNe(N,i), p̄[i], m*gs[i]), 1:L)
         Ep  = first.(xs)
         Epq = last.(xs)
@@ -46,16 +47,19 @@ function fixed_point_iteration(m, loci, R, N, p̄, p, pq; tol=1e-9)
     end
 end
 
-gffs(m, loci, p̄, R, p, pq) = map(
-    i->gff(m, loci, p̄, R, p, pq, i), 1:length(loci))
+gffs(m, loci, p̄, R, p, pq, mode) = map(
+    i->gff(m, loci, p̄, R, p, pq, i, mode), 1:length(loci))
 
-function gff(m, loci, p̄, R, p, pq, i)
+function gff(m, loci, p̄, R, p, pq, i, mode)
     lg = 0.0
     for j=1:length(loci)
         i == j && continue  # it does matter! We overpredict the beneficial
         # allele frequency when we include the focal locus' own effect in the
         # mₑ calculation
         lg += locuseffect(loci[j], p[j], pq[j], m, p̄[j], R[i,j])
+        if mode == 2
+            lg += diploidfactor(loci[j], p[j], pq[j], p̄[j])
+        end
     end
     exp(lg)
 end
@@ -71,9 +75,17 @@ function locuseffect(locus, p, pq, m, p̄, r)
     #D  = m + r - sa*(p - q) - sb*(2pq - q)  
     # below is wrong? NOT the same result when dominance??
     N = -s*h*(q̄ - q) + s*(1-2h)*(p̄*q - pq)
-    D = m + r + s*(h - (1-p) + 2*(1-2h)*pq)
+    D = m + r + s*(h - q + 2*(1-2h)*pq)
     # haploid -> sₑ = 2s, h=1/2 -> m + r + 2s(1/2 - (1-p)) = m + r - s(1 - 2p)
     return N/D
+end
+
+# when first generation of selection is a diploid migrant (SLiM?)
+function diploidfactor(locus, p, pq, p̄)
+    @unpack s, h = locus
+    q = 1 - p
+    q̄ = 1 - p̄
+    -s*(q̄ - q) + s*(1-2h)*(p̄*q̄ - pq)
 end
 
 function predict(locus, Nₑ, p̄, mₑ)
@@ -90,13 +102,16 @@ end
 
 function gff(eqmodel::Equilibrium, x)
     @unpack model, Ep, Epq = eqmodel
-    @unpack m, p̄, arch = model
+    @unpack m, p̄, arch, mode = model
     @unpack xs, loci = arch
     lg = 0.0
     for j=1:length(loci)
         rij = recrate(abs(x-xs[j]))
         le = locuseffect(loci[j], Ep[j], Epq[j], m, p̄[j], rij)
         lg += le
+        if mode == 2
+            lg += diploidfactor(loci[j], Ep[j], Epq[j], p̄[j])
+        end
     end
     exp(lg)
 end

@@ -40,25 +40,27 @@ function mepred(G, m)
 end
 
 function loglhood(X::AbstractVector, l, θ, logmₑ)
-    @unpack κ, K = θ
+    @unpack K = θ
     if K == 1  # single Nₑ
         mapreduce(i->winlogpdf(X[i], l[i], θ, exp(logmₑ[i])), +, 1:length(X))
     else  # K Nₑ classes, according to some distribution -- Beta appears best
-        κs = discretize(Gamma(1/κ, κ), K)
-        mapreduce(i->winlogpdf_mixture(X[i], l[i], θ, exp(logmₑ[i]), κs), +, 1:length(X))
+        #Bs = discretize(Gamma(1/θ.κ, θ.κ), K)
+        Bs = discretize(Beta(θ.a, θ.b), K)
+        mapreduce(i->winlogpdf_mixture(X[i], l[i], θ, exp(logmₑ[i]), Bs), +, 1:length(X))
     end
 end
 
 function winlogpdf(x, l, θ, m)
-    @unpack α, λ, u, γ, κ, K = θ
+    @unpack α, λ, u, γ, K = θ
     logpdfcl(m, u, α*λ, λ, x, γ*l)
 end
 
 winlogpdf_mixture(args...) = logsumexp(winlogpdf_components(args...)) 
 
-function winlogpdf_components(x, l, θ, m, κs)
+function winlogpdf_components(x, l, θ, m, Bs)
     @unpack α, λ, u, γ, K = θ
-    ℓs = map(r->logpdfcl(m, u, α*λ*r, λ*r, x, γ*l), κs) .- log(K)
+    #ℓs = map(B->logpdfcl(m, u, α*λ*B, λ*B, x, γ*l), Bs) .- log(K)
+    ℓs = map(B->logpdfcl(m, u, α*λ/B, λ/B, x, γ*l), Bs) .- log(K)
 end
 
 function discretize(d, K)
@@ -182,16 +184,20 @@ function me_posterior_mixture(smplr, θs, Xs)
         model = reconstruct(state.model, s=θ.s, m=θ.m, X=X)
         mes = θ.m * Barriers.gff(model)
         # get Nₑ in the discrete mixture model
-        @unpack κ, K, λ, α = θ
-        κs = discretize(Gamma(1/κ, κ), K)
+        #@unpack κ, K, λ, α = θ
+        @unpack K, λ, α = θ
+        Bs = discretize(Beta(θ.a, θ.b), K)
+        #Bs = discretize(Gamma(1/θ.κ, θ.κ), K)
         map(1:length(y)) do j
-            ℓs = winlogpdf_components(y[j], l[j], θ, mes[j], κs)
+            ℓs = winlogpdf_components(y[j], l[j], θ, mes[j], Bs)
             ps = lognormalize(ℓs)
-            r  = sample(κs, Weights(ps))
-            NB = 1/(2λ*r)
-            NA = 1/(2λ*α*r)
+            B  = sample(Bs, Weights(ps))
+            NB = B/(2λ)
+            NA = B/(2λ*α)
+            #NB = 1/(2λ*B)
+            #NA = 1/(2λ*α*B)
             fst = Barriers.pairfst_unidirectional_island(mes[j], 2NA, 2NB)
-            (me=mes[j], fst=fst, r=r, NA=NA, NB=NB)
+            (me=mes[j], fst=fst, B=B, NA=NA, NB=NB)
         end |> _permutedims
     end 
 end 

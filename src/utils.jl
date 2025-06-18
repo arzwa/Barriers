@@ -12,6 +12,11 @@ pairfst_unidirectional_island = eval(
   end)
 )
 
+coaltimes(m, NA, NB) = [NA, 
+    (3NB - 4NB*m + 2NA*NB*m + m^2 * NB - m^2 * NA*NB)/(1 - 2m + 2NB*m + m^2 - m^2*NB),
+    (1-m)/m + NA]
+
+
 function winstat(stat, winsize, xs, ys)
     T = typeof(stat(ys))
     zs = []

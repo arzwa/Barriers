@@ -56,6 +56,7 @@ function get_accsites_windows(acc, windows)
         # note that windows are closed intervals (w0 and w1 are included in the window)
         while i <= length(acc) && (acc[i][end] < w0 || isoverlapping(acc[i], w0:w1))
             n += overlaplen(acc[i], w0:w1)
+            acc[i][end] > w1 && break  # if the acc stretch extends beyond the windo, don't advance!
             i += 1
         end
         n
@@ -111,7 +112,7 @@ function windowdata(chrom::ChromosomeData, windows, df=snpstats(chrom))
     @unpack len, xcol = chrom
     ns = get_accsites_windows(chrom, windows)
     nc = _numcombos(chrom)
-    xdf = Barriers.window_df(df, windows, fun=x->sum(filter(!isnan, skipmissing(x))))
+    xdf = Barriers.window_df(df, windows, fun=x->sum(filter(!isnan, skipmissing(x))), xcol=xcol)
     xdf = hcat(xdf, DataFrame(:ns=>ns))
     sstats = [:piA, :piB, :piw, :pib, :fst]
     cstats = [:F, :FD, :HA, :HB, :HAB]

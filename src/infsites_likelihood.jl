@@ -33,8 +33,8 @@ function logpdfcl(m, μ, a, b, x, γ=1.0)
         @warn "Not a probability vector!"
         return -Inf
     else
-        y = x .* γ  # pseudo counts
-        sum(log.(p) .* y)
+        #y = x .* γ  # pseudo counts
+        γ * sum(log.(p) .* x)
     end
 end  # Categorical
 

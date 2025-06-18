@@ -5,6 +5,19 @@ geometry: margin=1in
 fontsize: 12pt
 ---
 
+## Coalescence times for the two-island unidirectional migration model
+
+Using theory for absorbing Markov chains, we find that for migration $A
+\rightarrow B$ forward in time we get the following expected coalescence times
+(haploid case, multiply all $N$ terms by a factor of 2 for the diploid case)
+\begin{align*}
+t_A    &= N_A \\
+t_{AB} &= \frac{1 - m}{m} + N_A \\
+t_{B}  &= \frac{3N_B - 4N_Bm + 2N_AN_Bm + m^2N_B - m^2N_AN_B}{1-2m+2N_Bm + m^2 - m^2N_B} \\
+&\approx \frac{3N_B - 4N_Bm + 2N_AN_Bm - m^2N_AN_B}{1 - 2m + 2N_Bm} \\
+&= \frac{N_B(3  - 4m) + mN_AN_B(2 - m)}{1 + 2m(N_B- 1)}
+\end{align*}
+
 ## Approximation of the effective migration rate in windows
 
 We approximate the gff in window $i$ of map length $L_i$ by
