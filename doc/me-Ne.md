@@ -34,4 +34,28 @@ different subpopulations are deleterious backgrounds, see
 @hudson1994gene, @charlesworth1997, @nordborg1997structured, @charlesworth2010,
 @good2014genetic, @santiago1995, @santiago1998, @santiago2016, @buffalo2024.
 
+## How well do they work?
+
+@zwaenepoel2024 showed that the $m_e$ theory can predict equilibrium
+allele frequencies at selected loci very accurately when linkage
+between selected loci is not too tight.
+To what extent the theory allows to predict genome-wide *neutral*
+divergence/differentiation was not studied in depth. In particular,
+predictions very close to barrier loci are note xpected to be
+accurate.
+
+In addition, it is not clear how BGS and divergent selection interact.
+In the regime where the Hudson & Kaplan theory applies with respect to
+BGS, can we account for both processes by rescaling $N$ and $m$ in the
+neutral theory? This remains to be studied in depth.
+
+It would be interesting to study these questions systematically,
+focusing on the regimes with near-complete divergence and HK-like BGS.
+
+![
+Predictions based on $m_e$ and BGS theory for forward simulations
+using SLiM.
+](/home/arzwa/vimwiki/build/img/2025-06-19.pdf)
+
+
 ## References

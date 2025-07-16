@@ -27,7 +27,7 @@ function gff(model::CoarseModel)
         div = predict_divergence(model, 1/λ)
         CoarseModel(X, Δ, R, s*div, m, u, λ)
     end
-    map(1:length(X)) do i
+    gs = map(1:length(X)) do i
         gi = map(1:length(X)) do j
             i == j ? log(gii(mod, i)) : log(gij(mod, i, j))
         end |> sum |> exp
@@ -36,18 +36,22 @@ end
 
 function gii(model, i)
     @unpack s, Δ, m, u = model
+    h = 0.5
     n = model.X[i]
     n == 0 && (return 1.0)
     x = range(0, Δ[i], n+1)
     xs = [(x[i] + x[i+1])/2 for i=1:n]
-    f(x) = exp(-sum([s / (s + m + recrate(abs(x - xs[i]))) for i=1:n]))
+    f(x) = exp(-sum([s*h / (s*h + m + recrate(abs(x - xs[i]))) for i=1:n]))
     g = quadgk(f, 0, Δ[i])[1]/Δ[i]
+    g * exp(-s*model.X[i])    # diploid model
 end
 
 gij(model, i, j) = exp(loggij(model, i, j))
 function loggij(model, i, j)
     @unpack X, s, R, m, u = model
-    -s*X[j]/(s + m + R[i,j])
+    h = 0.5
+    -s*h*X[j]/(s*h + m + R[i,j]) - s*X[j]
+    # -s*X[j]/(s + m + R[i,j])   # haploid model
 end
 
 # for haploids...

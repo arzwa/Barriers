@@ -30,7 +30,7 @@ end  # Multinomial
 function logpdfcl(m, μ, a, b, x, γ=1.0)
     p = siteprobs(m, μ, a, b)
     if !isprobvec(p) 
-        @warn "Not a probability vector!"
+        #@warn "Not a probability vector!"
         return -Inf
     else
         #y = x .* γ  # pseudo counts

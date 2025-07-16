@@ -77,6 +77,25 @@ Example of the coarse $m_e$ approximation when divergence is essentially
 complete.
 ](/home/arzwa/vimwiki/build/img/2025-05-04-complete-divergence-ex.pdf)
 
+### Diploid selection
+
+The above is essentially the haploid theory.
+When modeling diploid migration, where a fraction $m$ of the target
+population is replaced by a diploid offspring with both parents in the
+source population (as in SLiM), the gff should be multiplied by a
+factor which is the expected fitness of a diploid migrant in the
+resident background.
+
+For the complete divergence case, we have
+  $$g_{ii} = \frac{1}{L_i}\int_{0}^{L_i} 
+    \exp\left(-\sum_{j=1}^{X_i} \frac{sh}{sh + m + r(x_j, x)}\right) dx$$
+and
+  $$g_{ij} = \exp\left( -\frac{sh X_j}{sh + m + \bar{r}_{ij}} \right)$$
+and
+  $$g_i = e^{-s\sum_j X_j} g_{ii}\prod_{j\ne i} g_{ij}$$
+  
+
+
 ### Heterogeneous selection coefficients
 
 When we ignore heterogeneity in selection coefficients, it is unclear what we

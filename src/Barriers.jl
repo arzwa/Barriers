@@ -21,6 +21,7 @@ using PyCall
 using DataFrames
 using StatsFuns
 
+
 const Mb = 10^6
 const kb = 10^3
 
@@ -40,6 +41,7 @@ include("infsites_likelihood.jl")
 include("utils.jl")
 include("calibration.jl")
 include("chromosome-data.jl")
+include("msprime-2deme.jl")
 
 export Mb, kb
 export WindowedChromosome, GeneticMap, AeschbacherModel, MIModel, MILocus

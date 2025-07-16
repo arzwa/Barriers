@@ -42,6 +42,7 @@ Base.show(io::IO, m::GeneticMap) = write(io,
 maplength( m::GeneticMap) = last(m.gen2phys.itp.knots[1])
 physlength(m::GeneticMap) = last(m.phys2gen.itp.knots[1])
 
+recrate( d::GeneticMap) = recrate(d, 1, 2)
 recrate( d::GeneticMap, x1::Int, x2::Int) = recrate(distance(d, x1, x2))
 distance(d::GeneticMap, x1::Int, x2::Int) = abs(d[x1] - d[x2])
 recrate(d)  = 0.5*(1-exp(-2d))
@@ -64,7 +65,7 @@ function recrates(xs::AbstractVector{T}) where T
     return R
 end
 
-recrates(g::GeneticMap, xs::Vector{Int}) = recrates([g[x] for x in xs])
+recrates(g::GeneticMap, xs::AbstractVector{Int}) = recrates([g[x] for x in xs])
 
 function average_rr(g::GeneticMap; scale::Int64=1kb)
     xs = 1:scale:physlength(g)

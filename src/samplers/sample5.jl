@@ -31,12 +31,14 @@ function logprior(priors, θ)
 end
 
 function loglhood(data::CLData, G::Matrix, θ)
-    logmₑ = mepred(G, θ.m)
+    logmₑ = mepred(G, θ)
     loglhood(data.y, data.l, θ, logmₑ)
 end
 
-function mepred(G, m) 
-    vec(sum(G, dims=2)) .+ log(m)  # log mₑ
+function mepred(G, θ)
+    @unpack m = θ
+    # vec(sum(G, dims=2)) .+ log(m)  # log mₑ
+    vec(sum(G, dims=2)) .+ log(m)  # log mₑ, diploid migration + codominance
 end
 
 function loglhood(X::AbstractVector, l, θ, logmₑ)
@@ -182,7 +184,7 @@ function me_posterior_mixture(smplr, θs, Xs)
         θ = θs[i]
         X = Xs[i]
         model = reconstruct(state.model, s=θ.s, m=θ.m, X=X)
-        mes = θ.m * Barriers.gff(model)
+        mes = θ.m * Barriers.gff(model) 
         # get Nₑ in the discrete mixture model
         #@unpack κ, K, λ, α = θ
         @unpack K, λ, α = θ

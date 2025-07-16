@@ -16,6 +16,24 @@ coaltimes(m, NA, NB) = [NA,
     (3NB - 4NB*m + 2NA*NB*m + m^2 * NB - m^2 * NA*NB)/(1 - 2m + 2NB*m + m^2 - m^2*NB),
     (1-m)/m + NA]
 
+function merge_intervals(xs)
+    @assert issorted(xs)
+    i = 1; j = 1
+    x_ = xs[i]
+    ys = eltype(xs)[]
+    while i+j <= length(xs)
+        if x_[2] > xs[i+j][1]  
+            x_ = [x_[1], max(x_[2], xs[i+j][2])]
+            j += 1
+        else
+            push!(ys, x_)
+            x_ = xs[i+j]
+            i += 1
+            j = 1
+        end
+    end
+    return ys
+end
 
 function winstat(stat, winsize, xs, ys)
     T = typeof(stat(ys))
