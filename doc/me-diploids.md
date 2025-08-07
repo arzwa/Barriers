@@ -1,5 +1,5 @@
 ---
-title: $m_e$ in diploids
+title: Effective migration rates
 author: Arthur Zwaenepoel
 geometry: margin=1in
 fontsize: 12pt
@@ -181,17 +181,17 @@ which is equation 5 in the Genetics paper.
 
 Consider $h=1/2$ to obtain a haploid/no dominance model:
 \begin{align}
-E[g(x)] &\approx E[W_M]\prod_{k}^\infty E[W_k] \\
-  &\approx \exp\left(-\sum_i^L s_i(q^\ast_i - E[q_i])\right) 
-   \exp\left(-\sum_i^L\frac{s_ih_i(q^\ast_i - E[q_i])}{
-    m + r(x,x_i) + s_ih_i\left(1 - 2E[q_i]\right)}\right)\\
+\Ex[g(x)] &\approx \Ex[W_M]\prod_{k}^\infty \Ex[W_k] \\
+  &\approx \exp\left(-\sum_i^L s_i(q^\ast_i - \Ex[q_i])\right) 
+   \exp\left(-\sum_i^L\frac{s_ih_i(q^\ast_i - \Ex[q_i])}{
+    m + r(x,x_i) + s_ih_i\left(1 - 2\Ex[q_i]\right)}\right)\\
   &\qquad \text{where } h_i = 1/2
 \end{align}
 
 What does this entail for a single selected haploid locus at equilibrium
 frequency $m/s$, fixed in the mainland?
 \begin{align}
-E[g(x)] 
+\Ex[g(x)] 
   &\approx \exp\left(-s(1 - m/s)\right) \exp\left(-\frac{s(1 - m/s)}{
     m + r + s\left(1 - 2m/s\right)}\right)\\
   &\approx \exp\left(-(s - m)\right) \exp\left(-\frac{s - m}{r + s - m}\right)\\
@@ -200,8 +200,9 @@ E[g(x)]
   &\qquad\text{where } m < s
 \end{align}
 as $m \rightarrow 0$, this becomes
-$$\exp\left(\frac{-s(1-r-s)}{r+s}\right) \approx
-\exp\left(\frac{-s}{r+s}\right) \approx 1 - \frac{s}{r+s} = \frac{r}{r+s}$$
+\begin{align}
+  \Ex[g] = \exp\left(\frac{-s(1-r-s)}{r+s}\right) \approx \exp\left(\frac{-s}{r+s}\right) \approx 1 - \frac{s}{r+s} = \frac{r}{r+s}
+\end{align}
 Which is the result of @petry1983.
 
 

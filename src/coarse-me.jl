@@ -3,9 +3,9 @@
 
 Coarse-grained window `mₑ` model.
 """
-@with_kw struct CoarseModel{T}
-    X :: Vector{Int}  # number of selected sites in window
-    Δ :: Vector{T}    # winsizes in Morgan
+@with_kw struct CoarseModel{T,V}
+    X :: Vector{V}  # number of selected sites in window
+    Δ :: Vector{T}  # winsizes in Morgan
     R :: Matrix{T} = winrecrates(Δ)  # between window recombination rates
     s :: T  # selection coefficient
     m :: T  # migration rate
