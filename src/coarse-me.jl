@@ -4,10 +4,10 @@
 Coarse-grained window `mₑ` model.
 """
 @with_kw struct CoarseModel{T,V}
-    X :: Vector{V}  # number of selected sites in window
-    Δ :: Vector{T}  # winsizes in Morgan
+    X :: Vector{Int}  # number of selected sites in window
+    Δ :: Vector{T}    # winsizes in Morgan
     R :: Matrix{T} = winrecrates(Δ)  # between window recombination rates
-    s :: T  # selection coefficient
+    s :: V  # selection coefficient/vector of selection coefficients
     m :: T  # migration rate
     u :: T  # mutation rate
     λ :: T  # coal. rate (inverse pop size)
@@ -34,37 +34,78 @@ function gff(model::CoarseModel)
     end  
 end
 
+_gets(s::Real, i) = s
+_gets(s, i) = getindex(s, i)
+
 function gii(model, i)
-    @unpack s, Δ, m, u = model
-    h = 0.5
+    @unpack Δ, m, u = model
+    s = _gets(model.s, i)
     n = model.X[i]
     n == 0 && (return 1.0)
-    x = range(0, Δ[i], n+1)
-    xs = [(x[i] + x[i+1])/2 for i=1:n]
-    f(x) = exp(-sum([s*h / (s*h + m + recrate(abs(x - xs[i]))) for i=1:n]))
+    δ  = Δ[i]/n
+    xs = (δ/2):δ:(Δ[i]-δ/2)
+    #diploids...
+    #h = 0.5
+    #f(x) = exp(-sum([s*h / (s*h + m + recrate(abs(x - xs[i]))) for i=1:n]))
+    f(x) = exp(-sum([s / (s + m + recrate(abs(x - xs[i]))) for i=1:n]))
     g = quadgk(f, 0, Δ[i])[1]/Δ[i]
-    g * exp(-s*model.X[i])    # diploid model
+    #g * exp(-s*model.X[i])    # diploid model
+    g
+end
+
+function _gii(model, i)
+    @unpack Δ, m, u = model
+    s = _gets(model.s, i)
+    n = model.X[i]
+    n == 0 && (return 1.0)
+    δ  = Δ[i]/n
+    xs = (δ/2):δ:(Δ[i]-δ/2)
+    function f(x)
+        r = findfirst(xi->xi > x, xs)
+        r = isnothing(r) ? n+1 : r
+        l = r - 1
+        g = 1.0
+        sleft = 0.0
+        while l > 0
+            rr = recrate(x - xs[l])
+            g /= (1 + s/(rr + sleft))
+            sleft += s
+            l -= 1
+        end
+        srght = 0.0
+        while r <= n
+            rr = recrate(xs[r] - x)
+            g /= (1 + s/(rr + srght))
+            srght += s
+            r += 1
+        end
+        return g
+    end
+    g = quadgk(f, 0, Δ[i])[1]/Δ[i]
+    return g
 end
 
 gij(model, i, j) = exp(loggij(model, i, j))
 function loggij(model, i, j)
-    @unpack X, s, R, m, u = model
-    h = 0.5
-    -s*h*X[j]/(s*h + m + R[i,j]) - s*X[j]
-    # -s*X[j]/(s + m + R[i,j])   # haploid model
+    @unpack X, R, m, u = model
+    s = _gets(model.s, j)
+    #h = 0.5
+    #-s*h*X[j]/(s*h + m + R[i,j]) - s*X[j]
+    -s*X[j]/(s + m + R[i,j])   # haploid model
 end
 
 # for haploids...
 function predict_divergence(model::CoarseModel, N, tol=1e-5)
     @unpack X, s, Δ, m, u = model
+    s̄ = length(s) == 1 ? s[1] : mean(s)
     # get harmonic mean recombination rate
     r = harmonicmean_recrate(model)
     # predict divergence
     L = sum(X)
-    gfun(Ep) = exp(-L*s*Ep/r)
+    gfun(Ep) = exp(-L*s̄*Ep/r)
     Ep = 1.0
     while true
-        d = Wright(-2N*s, N*u, N*(m*gfun(Ep) + u), 0.5) 
+        d = Wright(-2N*s̄, N*u, N*(m*gfun(Ep) + u), 0.5) 
         Ep_ = mean(d)
         abs(Ep_ - Ep) < tol && return Ep_
         Ep = Ep_

@@ -12,9 +12,14 @@ pairfst_unidirectional_island = eval(
   end)
 )
 
-coaltimes(m, NA, NB) = [NA, 
-    (3NB - 4NB*m + 2NA*NB*m + m^2 * NB - m^2 * NA*NB)/(1 - 2m + 2NB*m + m^2 - m^2*NB),
-    (1-m)/m + NA]
+_coaltimes(m, NA, NB) = (ta=NA, tb=_tb(m,NA,NB), tab=_tab(m, NA))
+_tb(m, NA, NB) = NB*(3 + 2m*NA)/(1 + 2m*NB)
+_tab(m, NA) = 1/m + NA
+function _fst(m, NA, NB) 
+    pb = _tab(m, NA)
+    pw = (NA + _tb(m, NA, NB))/2
+    (pb - pw)/(pb + pw)
+end
 
 function merge_intervals(xs)
     @assert issorted(xs)

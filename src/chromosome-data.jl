@@ -11,10 +11,10 @@ All the data we need to conduct an analysis.
 - xcol : index/colname of the SNP positions
 
 """
-struct ChromosomeData{T<:AbstractVector,V}
+struct ChromosomeData{T<:AbstractVector,V,W}
     snps :: DataFrame
-    acc  :: Vector{UnitRange{Int64}}
-    len  :: Int
+    acc  :: Vector{Tuple{W,W}}
+    len  :: W
     popA :: T
     popB :: T
     xcol :: V
@@ -85,20 +85,20 @@ function _getsitestats(x, A, B)
     bs = [x[b] for b in B if !ismissing(x[b])]
     j = sum(as); m=length(as)
     k = sum(bs); n=length(bs)
-    T = m*(m-1)*n*(n-1)÷4
+    pa  = j/m  # all. freq. A
+    pb  = k/n  # all. freq. B
     a01 = j*(m-j)
-    a00 = j*(j-1)÷2
+    a00 = j*(j-1)÷2 
     a11 = (m-j)*(m-j-1)÷2
     b01 = k*(n-k)
     b00 = k*(k-1)÷2
     b11 = (n-k)*(n-k-1)÷2
+    T   = m*(m-1)*n*(n-1)÷4
     HAB = a01*b01
     HA  = a01*(b00+b11)
     HB  = b01*(a00+a11)
     FD  = a00*b11 + a11*b00
     F   = T - HAB - HA - HB - FD
-    pa  = j/m
-    pb  = k/n
     piA = a01/(a00 + a01 + a11)
     piB = b01/(b00 + b01 + b11)
     pib = (j/m)*(n-k)/n + (m-j)/m * k/n
@@ -131,9 +131,14 @@ function windowdata(chrom::ChromosomeData, windows, df=snpstats(chrom))
 end
 
 getwindows(chrom::ChromosomeData, ws) = getwindows(chrom.len, ws)
-function getwindows(len, ws)
+function getwindows(len::Int, ws)
     xs = [collect(1:ws:len) ; len+1]
     [(xs[i], xs[i+1]-1) for i=1:length(xs)-1]
+end
+
+function getwindows(len, ws)
+    n = len ÷ ws + 1
+    [((i-1)*ws, min(i*ws, len)) for i=1:n]
 end
 
 """
@@ -149,7 +154,7 @@ function window_df(df, windows; fun=x->mean(filter(!isnan, skipmissing(x))), xco
     wdf = DataFrame(hcat(xs...), names(df))
     x0 = first.(windows)
     x1 = last.(windows)
-    wdf = hcat(DataFrame(:w0=>x0, :w1=>x1, :wmid=>mean.(windows), :winlen=>x1 .- x0), wdf) 
+    wdf = hcat(DataFrame(:w0=>x0, :w1=>x1, :wmid=>mean.(windows), :winlen=>x1 .- x0 .+ 1), wdf) 
     return wdf
 end
 

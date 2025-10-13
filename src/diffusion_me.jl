@@ -13,11 +13,12 @@ struct Equilibrium{M,T}
 end
 
 function Equilibrium(model::MainlandIslandModel; 
-        p0=ones(length(model.arch)), tol=1e-9)
+        p0=ones(length(model.arch)), tol=1e-9, nmax=Inf)
     @unpack arch, p̄, N, m, mode = model
     @unpack R, loci = arch
     pq0 = p0 .* (1 .- p0)
-    Ep, Epq = fixed_point_iteration(m, loci, R, N, p̄, p0, pq0, mode, tol=tol)
+    Ep, Epq = fixed_point_iteration(m, loci, R, N, p̄, p0, pq0, mode, 
+        tol=tol, nmax=nmax)
     Equilibrium(model, Ep, Epq)
 end
 
@@ -34,16 +35,19 @@ end
 getNe(N::Real, _) = N
 #getNe(N, i) = N[i]
 
-function fixed_point_iteration(m, loci, R, N, p̄, p, pq, mode; tol=1e-9)
+function fixed_point_iteration(m, loci, R, N, p̄, p, pq, mode; 
+        tol=1e-9, nmax=Inf)
     L = length(loci) 
-    while true
+    it = 1
+    while true 
         gs  = gffs(m, loci, p̄, R, p, pq, mode) 
         xs  = map(i->predict(loci[i], getNe(N,i), p̄[i], m*gs[i]), 1:L)
         Ep  = first.(xs)
         Epq = last.(xs)
-        norm(Ep .- p) < tol && return (Ep, Epq)
-        p  = Ep
+        (norm(Ep .- p) < tol || it > nmax) && return (Ep, Epq)
+        p  = Ep 
         pq = Epq
+        it += 1
     end
 end
 
