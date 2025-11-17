@@ -54,29 +54,30 @@ E = Barriers.Equilibrium(M)
 
 ````
 ┌ Info: Beneficial allele freq., heterozygosity 
-└   (E.Ep[1], E.Epq[1]) = (0.012914966757458318, 0.008115163867275742)
+└   (E.Ep[1], E.Epq[1]) = (0.9375400966168393, 0.05576030226430959)
 
 ````
 
-effective migration rates at map positions `0:0.1:1`
+effective migration rates at map position `y`
 
 ````julia
-me_profile = map(y->Barriers.me(E, y), 0:0.1:1)
+y = 0.12
+Barriers.me(E, y)
 ````
 
 ````
-11-element Vector{Float64}:
- 0.0023205422959092755
- 0.0009565242006933221
- 0.0012726071096870687
- 0.000953147283045951
- 0.0008468073320226461
- 0.0011903483174785087
- 0.0011763533781347687
- 0.0007941370227800826
- 0.0012601624010251766
- 0.0024461195292587294
- 0.0025948743151865132
+0.0006400073198132228
+````
+
+Model of Aeschbacher et al. 2017
+
+````julia
+AM = AeschbacherModel(m, [-A.loci[i].s*A.loci[i].h for i=1:L], x)
+Barriers.me(AM, y)
+````
+
+````
+6.453165767309359e-5
 ````
 
 ---
