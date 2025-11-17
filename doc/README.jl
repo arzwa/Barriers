@@ -4,6 +4,7 @@
 # time to time.
 
 using Barriers, Random
+Random.seed!(11)
 
 # Predict allele frequency divergence for $L$ unlinked loci
 L = 50  
@@ -34,8 +35,8 @@ M = Barriers.MainlandIslandModel(arch=A, m=m, N=N)
 E = Barriers.Equilibrium(M)
 @info "Beneficial allele freq., heterozygosity " E.Ep[1], E.Epq[1]
 
-# effective migration rates at map position `y`
-y = 0.12
+# effective migration rates at map position `y` (here middle of chromosome)
+y = 0.5
 Barriers.me(E, y)
 
 # Model of Aeschbacher et al. 2017

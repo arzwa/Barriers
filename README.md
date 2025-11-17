@@ -9,6 +9,11 @@ time to time.
 
 ````julia
 using Barriers, Random
+Random.seed!(11)
+````
+
+````
+TaskLocalRNG()
 ````
 
 Predict allele frequency divergence for $L$ unlinked loci
@@ -54,19 +59,19 @@ E = Barriers.Equilibrium(M)
 
 ````
 ┌ Info: Beneficial allele freq., heterozygosity 
-└   (E.Ep[1], E.Epq[1]) = (0.9375400966168393, 0.05576030226430959)
+└   (E.Ep[1], E.Epq[1]) = (0.9427616778936532, 0.051221642447060414)
 
 ````
 
-effective migration rates at map position `y`
+effective migration rates at map position `y` (here middle of chromosome)
 
 ````julia
-y = 0.12
+y = 0.5
 Barriers.me(E, y)
 ````
 
 ````
-0.0006400073198132228
+0.00038387481093948964
 ````
 
 Model of Aeschbacher et al. 2017
@@ -77,7 +82,7 @@ Barriers.me(AM, y)
 ````
 
 ````
-6.453165767309359e-5
+9.24530938374751e-5
 ````
 
 ---
