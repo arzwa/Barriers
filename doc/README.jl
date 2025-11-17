@@ -34,6 +34,10 @@ M = Barriers.MainlandIslandModel(arch=A, m=m, N=N)
 E = Barriers.Equilibrium(M)
 @info "Beneficial allele freq., heterozygosity " E.Ep[1], E.Epq[1]
 
-# effective migration rates at map positions `0:0.1:1`
-me_profile = map(y->Barriers.me(E, y), 0:0.1:1)
+# effective migration rates at map position `y`
+y = 0.12
+Barriers.me(E, y)
 
+# Model of Aeschbacher et al. 2017
+AM = AeschbacherModel(m, [-A.loci[i].s*A.loci[i].h for i=1:L], x)
+Barriers.me(AM, y)
