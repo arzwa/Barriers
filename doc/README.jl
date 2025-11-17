@@ -1,4 +1,4 @@
-# Barriers
+# # Barriers
 #
 # This is actively developed research software. Everything will break from
 # time to time.
@@ -20,7 +20,7 @@ M = Barriers.MainlandIslandModel(arch=A, m=m, N=N)
 E = Barriers.Equilibrium(M)
 @info "Beneficial allele freq., heterozygosity " E.Ep[1], E.Epq[1]
 
-# With linkage, and variation in s
+# With linkage, and variation in $s$
 L = 25  
 s = 0.02     # selection coeff.
 h = 0.5      # dominance coeff.
@@ -34,6 +34,6 @@ M = Barriers.MainlandIslandModel(arch=A, m=m, N=N)
 E = Barriers.Equilibrium(M)
 @info "Beneficial allele freq., heterozygosity " E.Ep[1], E.Epq[1]
 
-# effective migration rates at map positions 0:0.1:1
+# effective migration rates at map positions `0:0.1:1`
 me_profile = map(y->Barriers.me(E, y), 0:0.1:1)
 

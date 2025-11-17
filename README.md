@@ -2,7 +2,7 @@
 EditURL = "doc/README.jl"
 ```
 
-Barriers
+# Barriers
 
 This is actively developed research software. Everything will break from
 time to time.
@@ -35,7 +35,7 @@ E = Barriers.Equilibrium(M)
 
 ````
 
-With linkage, and variation in s
+With linkage, and variation in $s$
 
 ````julia
 L = 25
@@ -54,11 +54,11 @@ E = Barriers.Equilibrium(M)
 
 ````
 ┌ Info: Beneficial allele freq., heterozygosity 
-└   (E.Ep[1], E.Epq[1]) = (0.8656379736355391, 0.10932751995806925)
+└   (E.Ep[1], E.Epq[1]) = (0.012914966757458318, 0.008115163867275742)
 
 ````
 
-effective migration rates at map positions 0:0.1:1
+effective migration rates at map positions `0:0.1:1`
 
 ````julia
 me_profile = map(y->Barriers.me(E, y), 0:0.1:1)
@@ -66,17 +66,17 @@ me_profile = map(y->Barriers.me(E, y), 0:0.1:1)
 
 ````
 11-element Vector{Float64}:
- 0.0021560892425549335
- 0.0010355591792402085
- 0.0013441986913604984
- 0.0014542946482371927
- 0.0013913870808799208
- 0.0006520226819396586
- 0.00033754825712916905
- 0.000925726179664812
- 0.0015075011446559533
- 0.00158032633833215
- 0.0014547634902671402
+ 0.0023205422959092755
+ 0.0009565242006933221
+ 0.0012726071096870687
+ 0.000953147283045951
+ 0.0008468073320226461
+ 0.0011903483174785087
+ 0.0011763533781347687
+ 0.0007941370227800826
+ 0.0012601624010251766
+ 0.0024461195292587294
+ 0.0025948743151865132
 ````
 
 ---
