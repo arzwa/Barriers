@@ -4,7 +4,7 @@
 # time to time.
 
 using Barriers, Random
-Random.seed!(11)
+Random.seed!(112)
 
 # Predict allele frequency divergence for $L$ unlinked loci
 L = 50  

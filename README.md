@@ -9,7 +9,7 @@ time to time.
 
 ````julia
 using Barriers, Random
-Random.seed!(11)
+Random.seed!(112)
 ````
 
 ````
@@ -59,7 +59,7 @@ E = Barriers.Equilibrium(M)
 
 ````
 ┌ Info: Beneficial allele freq., heterozygosity 
-└   (E.Ep[1], E.Epq[1]) = (0.9427616778936532, 0.051221642447060414)
+└   (E.Ep[1], E.Epq[1]) = (0.6965260741487541, 0.08895227383918661)
 
 ````
 
@@ -71,7 +71,7 @@ Barriers.me(E, y)
 ````
 
 ````
-0.00038387481093948964
+0.0005176929737567705
 ````
 
 Model of Aeschbacher et al. 2017
@@ -82,7 +82,7 @@ Barriers.me(AM, y)
 ````
 
 ````
-9.24530938374751e-5
+0.0001326087138490874
 ````
 
 ---
