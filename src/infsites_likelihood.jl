@@ -1,23 +1,6 @@
 # Migration is from B->A backwards in time, see `sitepr`
 # Migration is A->B forward in time, i.e. B is the island
-function CLModel(m, μ, a, b, n)
-    p = probs(m, μ, a, b)
-    return Multinomial(n, p)
-end
-
 const states = ["F", "FD", "HA", "HB", "HAB"]
-
-#function logpdfcl(m, μ, a, b, x)
-#    p = probs(m, μ, a, b)
-#    if !isprobvec(p) 
-#        @warn "Not a probability vector!"
-#        return -Inf
-#    else
-#        return logpdf(Multinomial(sum(x), p), x)
-#    end
-#end
-
-logpdfsite(m, u, a, b, site) = log(probs(m, u, a, b)[site])
 
 # γ is the number of pseudo-data points per window
 function _logpdfcl(m, μ, a, b, x, γ=1.0)

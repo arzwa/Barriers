@@ -19,6 +19,7 @@ gets(M::AeschbacherModel{T,V}, i) where {T,V<:AbstractVector} = M.s[i]
 gets(M::AeschbacherModel{T,V}, _) where {T,V<:Real} = M.s
 
 # calculate me at **map** position x
+me(model::AeschbacherModel, x) = model.m*gff(model, x)
 function gff(model::AeschbacherModel, x)
     @unpack m, xs = model
     loggff = 0.0

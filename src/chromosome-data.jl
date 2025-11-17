@@ -119,7 +119,9 @@ function windowdata(chrom::ChromosomeData, windows, df=snpstats(chrom))
     _fun1(x) = (; [k=>x[k]/x[:ns] for k in sstats]...)
     _fun2(x) = (x[:F] + nc*x[:ns] - sum([x[k] for k in cstats]))
     select!(xdf, 
-        chrom.xcol, :w0, :w1, :wmid, :winlen, :ns,
+        chrom.xcol, 
+        #:w0, 
+        :w1, :wmid, :winlen, :ns,
         AsTable([:ns; sstats]) => ByRow(_fun1) => AsTable,
         AsTable([:ns; cstats]) => ByRow(_fun2) => :F,
         :FD, :HA, :HB, :HAB
